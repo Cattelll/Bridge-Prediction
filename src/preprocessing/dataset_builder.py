@@ -105,6 +105,14 @@ def build_dataset(
     else:
         print("      No missing values in features.")
 
+    # Remove classes with <2 samples so all classes can appear in training after split
+    # (also ensures XGBoost gets contiguous 0..n-1 labels)
+    class_counts_pre = df[target_col].value_counts()
+    rare = class_counts_pre[class_counts_pre < 2].index.tolist()
+    if rare:
+        print(f"[WARN] Removing {len(rare)} class(es) with <2 samples: {rare}")
+        df = df[~df[target_col].isin(rare)].copy().reset_index(drop=True)
+
     # ------------------------------------------------------------------
     # 3. Label encoding
     # ------------------------------------------------------------------
