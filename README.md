@@ -6,7 +6,7 @@ Penelitian perbandingan algoritma machine learning (Random Forest, XGBoost, Ligh
 
 Contract Bridge adalah permainan kartu yang melibatkan proses bidding (lelang) untuk menentukan kontrak — level dan jenis suit yang akan dimainkan. Memprediksi kontrak optimal secara otomatis merupakan masalah klasifikasi multikelas dengan 35 kelas target.
 
-Dataset berasal dari **411 file .lin** BBO (Bridge Base Online), menghasilkan **±7.950 papan** setelah pembersihan data.
+Dataset berasal dari **411 file .lin** BBO (Bridge Base Online), menghasilkan **±8.600 papan** setelah pembersihan data.
 
 ## Hasil
 
@@ -58,21 +58,21 @@ Bridge-Prediction/
 
 ## Instalasi
 
-```bash
+```powershell
 # Clone repo
 git clone <repo-url>
 cd Bridge-Prediction
 
-# Buat virtual environment
-py -3.12 -m venv .venv
-.venv\Scripts\activate
+# Install dependencies (gunakan Python 3.12 sistem)
+pip install -e ".[notebook,dev]"
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Register Jupyter kernel
-python -m ipykernel install --user --name bridge-venv --display-name "Python 3.12 (Bridge venv)"
+# Daftarkan Jupyter kernel
+python -m ipykernel install --user --name bridge --display-name "Python 3.12 (Bridge)"
 ```
+
+> **Catatan:** Virtual environment `.venv` mungkin diblokir oleh Windows Application
+> Control. Gunakan Python sistem secara langsung. Pilih kernel
+> **"Python 3.12 (Bridge)"** di Jupyter.
 
 ## Penggunaan
 
