@@ -35,6 +35,12 @@ outputs/models/*
 outputs/results/*
 !outputs/results/.gitkeep
 
+# Experiments (dated runs — results & models not tracked)
+experiments/*/results/*
+!experiments/*/results/.gitkeep
+experiments/*/models/*
+!experiments/*/models/.gitkeep
+
 # Logs
 *.log
 logs/
