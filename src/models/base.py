@@ -13,7 +13,8 @@ class BaseModel(ABC):
     name: str = "base"
 
     @abstractmethod
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> None: ...
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray,
+            sample_weight: np.ndarray | None = None) -> None: ...
 
     @abstractmethod
     def predict(self, X: np.ndarray) -> np.ndarray: ...

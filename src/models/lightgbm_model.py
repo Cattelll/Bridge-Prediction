@@ -28,8 +28,9 @@ class LGBMModel(BaseModel):
         self.clf = LGBMClassifier(**defaults)
         self.params = defaults
 
-    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
-        self.clf.fit(X_train, y_train)
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray,
+            sample_weight: np.ndarray | None = None) -> None:
+        self.clf.fit(X_train, y_train, sample_weight=sample_weight)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return self.clf.predict(X)
