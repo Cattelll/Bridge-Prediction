@@ -20,7 +20,7 @@ class RFModel(BaseModel):
 
     def __init__(self, **kwargs) -> None:
         defaults = dict(
-            n_estimators=200,
+            n_estimators=300,
             max_depth=None,
             min_samples_split=5,
             random_state=42,

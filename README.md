@@ -10,11 +10,11 @@ Dataset berasal dari **506 file .lin** BBO (Bridge Base Online), menghasilkan **
 
 ## Hasil
 
-*(test set, retrain terakhir pada dataset 506 file / 10.223 papan)*
+*(test set, retrain terakhir pada dataset 506 file / 10.223 papan, `n_estimators=300` di ketiga model)*
 
 | Model | Accuracy | Top-3 Acc | Top-5 Acc | F1 Macro | F1 Weighted |
 |-------|----------|-----------|-----------|----------|-------------|
-| Random Forest | 46.3% | 75.2% | 84.8% | 0.245 | 0.451 |
+| Random Forest | 46.3% | 75.7% | 85.8% | 0.244 | 0.448 |
 | **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
 | LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
 

@@ -37,14 +37,20 @@ Detail lengkap di [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Hasil (test set)
 
-*Retrain terakhir: 2026-07-09, di atas dataset 506 file / 10.223 papan
+*Retrain terakhir: 2026-07-09, di atas dataset 506 file / 10.223 papan,
+`n_estimators=300` disamakan di ketiga model
 — lihat [outputs/results/test_comparison.csv](../outputs/results/test_comparison.csv)*
 
 | Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
 |---|---|---|---|---|---|
-| RandomForest | 46.3% | 75.2% | 84.8% | 0.245 | 0.451 |
+| RandomForest | 46.3% | 75.7% | 85.8% | 0.244 | 0.448 |
 | **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
 | LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
+
+> Menaikkan RandomForest dari 200→300 trees (percobaan menyamakan hyperparameter
+> antar model) tidak memberi perbaikan berarti — accuracy/F1 turun ~0.1pp,
+> top-k naik ~0.5-1pp, level noise. RF tampaknya sudah konvergen di ~200 trees
+> untuk dataset ini.
 
 ## Temuan Utama
 

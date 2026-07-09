@@ -144,16 +144,19 @@ Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 
 ## Hasil Final
 
-*(test set, retrain 2026-07-09 di atas 506 file / 10.223 papan / 164 fitur / 35 kelas)*
+*(test set, retrain 2026-07-09 di atas 506 file / 10.223 papan / 164 fitur / 35 kelas,
+`n_estimators=300` untuk ketiga model — disamakan dari RF sebelumnya 200)*
 
 | Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
 |-------|----------|-------|-------|----------|-------------|
-| RandomForest | 46.3% | 75.2% | 84.8% | 0.245 | 0.451 |
+| RandomForest | 46.3% | 75.7% | 85.8% | 0.244 | 0.448 |
 | **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
 | LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
 
 XGBoost unggul accuracy, top-k, & F1 weighted; LightGBM unggul F1 Macro (class imbalance).
-Sumber: `outputs/results/test_comparison.csv`.
+Sumber: `outputs/results/test_comparison.csv`. Menaikkan RF dari 200→300 trees tidak
+memberi perbaikan berarti (accuracy/F1 turun ~0.1pp, top-k naik ~0.5-1pp — level noise);
+disamakan demi konsistensi eksperimen, bukan karena ada gain akurasi.
 
 ---
 
