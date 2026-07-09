@@ -6,9 +6,16 @@ Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
 Contract Bridge dari rekaman BBO LIN format.
 
 ## Status Proyek (Juli 2026)
-**Selesai.** Parser, feature engineering, training, dan evaluasi sudah
-diimplementasi. Hasil tersimpan di `outputs/`. Notebook 01–04 sudah
-dieksekusi penuh.
+Parser, feature engineering, training, dan evaluasi sudah diimplementasi.
+Dataset mentah diperluas dari 411 → **506 file .lin** (10.223 papan setelah
+dedup); `scripts/run_pipeline.py` sudah di-retrain ulang di atas dataset ini
+pada 2026-07-09 dan `outputs/models/*.pkl` + `outputs/results/*_test.json`
+mencerminkan hasil terbaru. **Belum dikerjakan:** notebook 01–04 belum
+dieksekusi ulang di dataset yang diperluas ini — cell output & visualisasi
+PNG di dalamnya (termasuk `nb04_summary.json` yang dipakai `scripts/report.py`)
+masih dari run lama (6.963 papan/156 fitur). Jalankan ulang notebook 01→04
+sebelum mengklaim hasil sepenuhnya konsisten. Ringkasan lengkap di
+[docs/SUMMARY.md](docs/SUMMARY.md).
 
 ---
 
@@ -71,8 +78,8 @@ src/
     metrics.py             evaluate(), compare_models(), save_results()
 
 notebooks/
-  01_dataset_analysis.ipynb   Parsing stats + distribusi dataset
-  02_eda_features.ipynb       EDA 164 fitur
+  01_data_extraction.ipynb    Data extraction: parsing LIN → dataset CSV (data/processed/)
+  02_eda_features.ipynb       EDA & feature engineering (164 fitur)
   03_modeling.ipynb           Training + learning curve
   04_evaluation.ipynb         Evaluasi final, SHAP, radar
 
@@ -82,13 +89,16 @@ scripts/
   validate_parser.py          Smoke test parser LIN
   validate_features.py        Validasi output feature engineering
 
-Makefile                      Automation: make setup/build/train/report/notebooks/all/clean
+docs/
+  SUMMARY.md                   Ringkasan proyek satu halaman
+  ARCHITECTURE.md              Alur pipeline, tanggung jawab modul, keputusan desain
+  FEATURES.md                  Data dictionary lengkap 164 fitur
 
 configs/config.yaml           Hyperparameter + path (sumber kebenaran)
-data/raw/                     411 file .lin (~8625 board) — tidak di-git
+data/raw/                     506 file .lin (~10.223 board setelah dedup) — tidak di-git
 data/processed/               CSV split + artefak encoder — tidak di-git
 outputs/models/               Model tersimpan .pkl — tidak di-git
-outputs/results/              PNG visualisasi + JSON hasil — tidak di-git
+outputs/results/               PNG visualisasi + JSON hasil — tidak di-git
 ```
 
 ---
@@ -134,13 +144,16 @@ Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 
 ## Hasil Final
 
+*(test set, retrain 2026-07-09 di atas 506 file / 10.223 papan / 164 fitur / 35 kelas)*
+
 | Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
 |-------|----------|-------|-------|----------|-------------|
-| RandomForest | 44.1% | 72.1% | 81.4% | 0.233 | 0.432 |
-| **XGBoost** | **50.2%** | **73.9%** | **83.6%** | 0.231 | **0.477** |
-| LightGBM | 49.0% | 73.0% | 82.7% | **0.253** | 0.464 |
+| RandomForest | 46.3% | 75.2% | 84.8% | 0.245 | 0.451 |
+| **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
+| LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
 
-XGBoost unggul accuracy & top-k; LightGBM unggul F1 Macro (class imbalance).
+XGBoost unggul accuracy, top-k, & F1 weighted; LightGBM unggul F1 Macro (class imbalance).
+Sumber: `outputs/results/test_comparison.csv`.
 
 ---
 
@@ -159,7 +172,7 @@ XGBoost unggul accuracy & top-k; LightGBM unggul F1 Macro (class imbalance).
 
 | Apa | Alasan |
 |-----|--------|
-| Token handling di `lin_parser.py` | Divalidasi pada 8625 board |
+| Token handling di `lin_parser.py` | Divalidasi pada 10.223 board (506 file) tanpa error parsing |
 | Random seed `42` | Hasil dalam notebook bergantung pada split ini |
 | Urutan kolom fitur | Model .pkl terserialisasi dengan urutan ini |
 | `target_base` sebagai target utama | Semua model dilatih dan dievaluasi di atas ini |

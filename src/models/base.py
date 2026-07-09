@@ -10,6 +10,12 @@ import pandas as pd
 
 
 class BaseModel(ABC):
+    """Common contract for RFModel, XGBModel, and LGBMModel.
+
+    Keeping a shared interface lets scripts/notebooks train, save,
+    load, and evaluate the three algorithms interchangeably.
+    """
+
     name: str = "base"
 
     @abstractmethod

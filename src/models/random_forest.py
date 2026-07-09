@@ -1,3 +1,9 @@
+"""Random Forest wrapper (BaseModel) around sklearn's RandomForestClassifier.
+
+class_weight="balanced" compensates for the long-tail class imbalance in
+target_base (35 contracts + PASS). Defaults mirror configs/config.yaml.
+"""
+
 from __future__ import annotations
 
 import pickle

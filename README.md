@@ -6,17 +6,20 @@ Penelitian perbandingan algoritma machine learning (Random Forest, XGBoost, Ligh
 
 Contract Bridge adalah permainan kartu yang melibatkan proses bidding (lelang) untuk menentukan kontrak — level dan jenis suit yang akan dimainkan. Memprediksi kontrak optimal secara otomatis merupakan masalah klasifikasi multikelas dengan 35 kelas target.
 
-Dataset berasal dari **411 file .lin** BBO (Bridge Base Online), menghasilkan **±8.600 papan** setelah pembersihan data.
+Dataset berasal dari **506 file .lin** BBO (Bridge Base Online), menghasilkan **10.223 papan** setelah pembersihan & deduplikasi (35 kelas kontrak, 164 fitur).
 
 ## Hasil
 
+*(test set, retrain terakhir pada dataset 506 file / 10.223 papan)*
+
 | Model | Accuracy | Top-3 Acc | Top-5 Acc | F1 Macro | F1 Weighted |
 |-------|----------|-----------|-----------|----------|-------------|
-| Random Forest | 44.1% | 72.1% | 81.4% | 0.233 | 0.432 |
-| **XGBoost** | **50.2%** | **73.9%** | **83.6%** | 0.231 | **0.477** |
-| LightGBM | 49.0% | 73.0% | 82.7% | **0.253** | 0.464 |
+| Random Forest | 46.3% | 75.2% | 84.8% | 0.245 | 0.451 |
+| **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
+| LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
 
-> XGBoost unggul dalam Accuracy & Top-k; LightGBM unggul dalam F1 Macro (penanganan class imbalance).
+> XGBoost unggul dalam Accuracy, Top-k, & F1 Weighted; LightGBM unggul dalam F1 Macro (penanganan class imbalance).
+> Lihat [docs/SUMMARY.md](docs/SUMMARY.md) untuk ringkasan lengkap & [outputs/results/REPORT.md](outputs/results/REPORT.md) untuk hasil mentah.
 
 ## Struktur Proyek
 
@@ -29,8 +32,8 @@ Bridge-Prediction/
 │   ├── models/          # RF, XGBoost, LightGBM wrappers
 │   └── evaluation/      # Metrics, confusion matrix, SHAP
 ├── notebooks/
-│   ├── 01_dataset_analysis.ipynb   # Analisis struktur LIN & distribusi
-│   ├── 02_eda_features.ipynb       # EDA 164 fitur
+│   ├── 01_data_extraction.ipynb    # Data extraction: parsing LIN → dataset CSV
+│   ├── 02_eda_features.ipynb       # EDA & feature engineering (164 fitur)
 │   ├── 03_modeling.ipynb           # Training & learning curve
 │   └── 04_evaluation.ipynb         # Evaluasi final, SHAP, radar
 ├── scripts/
@@ -65,12 +68,17 @@ cd Bridge-Prediction
 
 # Install dependencies (gunakan Python 3.12 sistem)
 pip install -e ".[notebook,dev]"
+# atau jika pyproject.toml belum ada di working tree:
+pip install -r requirements.txt
 
 # Daftarkan Jupyter kernel
 python -m ipykernel install --user --name bridge --display-name "Python 3.12 (Bridge)"
 ```
 
-> **Catatan:** Virtual environment `.venv` mungkin diblokir oleh Windows Application
+> **Catatan:** `pyproject.toml` saat ini terhapus di working tree lokal (unstaged) —
+> gunakan `requirements.txt` sebagai fallback sampai ini diselesaikan.
+>
+> Virtual environment `.venv` mungkin diblokir oleh Windows Application
 > Control. Gunakan Python sistem secara langsung. Pilih kernel
 > **"Python 3.12 (Bridge)"** di Jupyter.
 
@@ -85,7 +93,7 @@ python scripts/run_pipeline.py
 ### Jalankan notebook secara berurutan
 
 ```bash
-jupyter nbconvert --to notebook --execute --inplace notebooks/01_dataset_analysis.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/01_data_extraction.ipynb
 jupyter nbconvert --to notebook --execute --inplace notebooks/02_eda_features.ipynb
 jupyter nbconvert --to notebook --execute --inplace notebooks/03_modeling.ipynb
 jupyter nbconvert --to notebook --execute --inplace notebooks/04_evaluation.ipynb
@@ -117,6 +125,12 @@ Token utama: `vg` (info turnamen), `md` (distribusi kartu), `sv` (vulnerability)
 - Python 3.12
 - scikit-learn ≥ 1.4, xgboost ≥ 2.0, lightgbm ≥ 4.0
 - shap ≥ 0.45, matplotlib ≥ 3.8, pandas ≥ 2.1
+
+## Dokumentasi Tambahan
+
+- [docs/SUMMARY.md](docs/SUMMARY.md) — ringkasan proyek satu halaman (tujuan, metode, hasil, temuan)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — alur pipeline, tanggung jawab tiap modul, keputusan desain
+- [docs/FEATURES.md](docs/FEATURES.md) — data dictionary lengkap 164 fitur
 
 ## Lisensi
 

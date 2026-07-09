@@ -1,3 +1,10 @@
+"""LightGBM wrapper (BaseModel) around lightgbm.LGBMClassifier.
+
+Best F1 Macro of the three models (0.253), i.e. the most balanced across
+rare contract classes despite lower raw accuracy than XGBoost.
+Defaults mirror configs/config.yaml.
+"""
+
 from __future__ import annotations
 
 import pickle

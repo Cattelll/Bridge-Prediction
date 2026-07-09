@@ -1,3 +1,9 @@
+"""XGBoost wrapper (BaseModel) around xgboost.XGBClassifier.
+
+Best-performing model in this project (50.2% accuracy, 83.6% top-5).
+Defaults mirror configs/config.yaml.
+"""
+
 from __future__ import annotations
 
 import pickle
