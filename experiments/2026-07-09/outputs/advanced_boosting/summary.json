@@ -1,0 +1,94 @@
+{
+  "generated": "2026-07-10T08:32:44.500800",
+  "results": {
+    "XGBoost baseline": {
+      "accuracy": 0.512720156555773,
+      "f1_macro": 0.2685239995412779,
+      "f1_weighted": 0.4685455385001663,
+      "top_3_accuracy": 0.7508153946510111,
+      "top_5_accuracy": 0.8480104370515329,
+      "fit_seconds": 30.5,
+      "best_iteration": null
+    },
+    "XGBoost +sample_weight": {
+      "accuracy": 0.49054142204827134,
+      "f1_macro": 0.2887483697350452,
+      "f1_weighted": 0.4847544020107757,
+      "top_3_accuracy": 0.7599478147423353,
+      "top_5_accuracy": 0.8564905414220483,
+      "fit_seconds": 33.6,
+      "best_iteration": null
+    },
+    "XGBoost +sample_weight+dart": {
+      "accuracy": 0.4918460534898891,
+      "f1_macro": 0.3216657802965872,
+      "f1_weighted": 0.49833622364397034,
+      "top_3_accuracy": 0.7482061317677756,
+      "top_5_accuracy": 0.8330071754729289,
+      "fit_seconds": 198.4,
+      "best_iteration": null
+    },
+    "XGBoost +sample_weight+dart+early_stop": {
+      "accuracy": 0.4957599478147423,
+      "f1_macro": 0.3092728812982995,
+      "f1_weighted": 0.49115834447563883,
+      "top_3_accuracy": 0.7619047619047619,
+      "top_5_accuracy": 0.8506196999347684,
+      "fit_seconds": 544.3,
+      "best_iteration": 567
+    },
+    "LightGBM baseline": {
+      "accuracy": 0.5094585779517287,
+      "f1_macro": 0.26132929353981604,
+      "f1_weighted": 0.45398818949083436,
+      "top_3_accuracy": 0.7469015003261579,
+      "top_5_accuracy": 0.83235485975212,
+      "fit_seconds": 30.5,
+      "best_iteration": null
+    },
+    "LightGBM +sample_weight": {
+      "accuracy": 0.5212002609262884,
+      "f1_macro": 0.3091567829669631,
+      "f1_weighted": 0.48041158659052163,
+      "top_3_accuracy": 0.7560339204174821,
+      "top_5_accuracy": 0.8382257012393999,
+      "fit_seconds": 31.2,
+      "best_iteration": null
+    },
+    "LightGBM +sample_weight+goss": {
+      "accuracy": 0.4827136333985649,
+      "f1_macro": 0.24847368650072166,
+      "f1_weighted": 0.43590659608148424,
+      "top_3_accuracy": 0.715590345727332,
+      "top_5_accuracy": 0.8199608610567515,
+      "fit_seconds": 32.2,
+      "best_iteration": null
+    },
+    "LightGBM +sample_weight+goss+early_stop": {
+      "accuracy": 0.4781474233529028,
+      "f1_macro": 0.25802729818878123,
+      "f1_weighted": 0.46609089498638706,
+      "top_3_accuracy": 0.7318982387475538,
+      "top_5_accuracy": 0.83235485975212,
+      "fit_seconds": 12.6,
+      "best_iteration": 81
+    }
+  },
+  "reference_from_previous_experiments": {
+    "REF: XGBoost+RandomOverSampler (nb02)": {
+      "accuracy": 0.5035877364644488,
+      "f1_macro": 0.28860799401882453,
+      "f1_weighted": 0.4863593857093195,
+      "top_3_accuracy": 0.7527723418134377,
+      "top_5_accuracy": 0.8499673842139596,
+      "n_train_rows": 50995
+    },
+    "REF: Two-stage kaskade-kategori hard (nb03)": {
+      "accuracy": 0.4911937377690802,
+      "f1_macro": 0.2690298254095679,
+      "f1_weighted": 0.4829242283595097,
+      "top_3_accuracy": 0.7625570776255708,
+      "top_5_accuracy": 0.8564905414220483
+    }
+  }
+}

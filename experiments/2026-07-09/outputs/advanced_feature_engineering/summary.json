@@ -1,0 +1,185 @@
+{
+  "generated": "2026-07-10T08:17:01.587439",
+  "new_feature_cols": [
+    "N_quick_tricks",
+    "N_total_points",
+    "N_suit_quality_best",
+    "E_quick_tricks",
+    "E_total_points",
+    "E_suit_quality_best",
+    "S_quick_tricks",
+    "S_total_points",
+    "S_suit_quality_best",
+    "W_quick_tricks",
+    "W_total_points",
+    "W_suit_quality_best",
+    "ns_quick_tricks",
+    "ns_total_points",
+    "ns_second_fit",
+    "ns_lott_level",
+    "ew_quick_tricks",
+    "ew_total_points",
+    "ew_second_fit",
+    "ew_lott_level",
+    "opener_hcp",
+    "opener_balanced",
+    "preemptive_opening"
+  ],
+  "n_new_features": 23,
+  "results": {
+    "XGBoost (164 fitur)": {
+      "accuracy": 0.512720156555773,
+      "f1_macro": 0.2685239995412779,
+      "f1_weighted": 0.4685455385001663,
+      "top_3_accuracy": 0.7508153946510111,
+      "top_5_accuracy": 0.8480104370515329
+    },
+    "XGBoost (164+23 fitur)": {
+      "accuracy": 0.5120678408349641,
+      "f1_macro": 0.27953251766974097,
+      "f1_weighted": 0.47082466408555546,
+      "top_3_accuracy": 0.7586431833007176,
+      "top_5_accuracy": 0.8421395955642531
+    }
+  },
+  "new_feature_ranks": [
+    {
+      "feature": "ew_total_points",
+      "importance": 0.016188664361834526,
+      "rank": 8,
+      "is_new": true
+    },
+    {
+      "feature": "ns_total_points",
+      "importance": 0.0146087147295475,
+      "rank": 12,
+      "is_new": true
+    },
+    {
+      "feature": "ns_lott_level",
+      "importance": 0.009783477522432804,
+      "rank": 17,
+      "is_new": true
+    },
+    {
+      "feature": "ew_lott_level",
+      "importance": 0.008307539857923985,
+      "rank": 23,
+      "is_new": true
+    },
+    {
+      "feature": "opener_balanced",
+      "importance": 0.008059429004788399,
+      "rank": 27,
+      "is_new": true
+    },
+    {
+      "feature": "ew_quick_tricks",
+      "importance": 0.006444968748837709,
+      "rank": 38,
+      "is_new": true
+    },
+    {
+      "feature": "ns_quick_tricks",
+      "importance": 0.00585772842168808,
+      "rank": 43,
+      "is_new": true
+    },
+    {
+      "feature": "ns_second_fit",
+      "importance": 0.005557694006711245,
+      "rank": 48,
+      "is_new": true
+    },
+    {
+      "feature": "preemptive_opening",
+      "importance": 0.004992649424821138,
+      "rank": 58,
+      "is_new": true
+    },
+    {
+      "feature": "opener_hcp",
+      "importance": 0.0047399308532476425,
+      "rank": 60,
+      "is_new": true
+    },
+    {
+      "feature": "S_quick_tricks",
+      "importance": 0.004011790733784437,
+      "rank": 79,
+      "is_new": true
+    },
+    {
+      "feature": "ew_second_fit",
+      "importance": 0.003828780259937048,
+      "rank": 92,
+      "is_new": true
+    },
+    {
+      "feature": "E_total_points",
+      "importance": 0.003792604198679328,
+      "rank": 98,
+      "is_new": true
+    },
+    {
+      "feature": "E_quick_tricks",
+      "importance": 0.0037088259123265743,
+      "rank": 105,
+      "is_new": true
+    },
+    {
+      "feature": "W_suit_quality_best",
+      "importance": 0.003685972886160016,
+      "rank": 109,
+      "is_new": true
+    },
+    {
+      "feature": "N_suit_quality_best",
+      "importance": 0.0036787777207791805,
+      "rank": 110,
+      "is_new": true
+    },
+    {
+      "feature": "S_suit_quality_best",
+      "importance": 0.0035872366279363632,
+      "rank": 123,
+      "is_new": true
+    },
+    {
+      "feature": "S_total_points",
+      "importance": 0.003551946021616459,
+      "rank": 128,
+      "is_new": true
+    },
+    {
+      "feature": "W_quick_tricks",
+      "importance": 0.0035498482175171375,
+      "rank": 132,
+      "is_new": true
+    },
+    {
+      "feature": "W_total_points",
+      "importance": 0.003477087477222085,
+      "rank": 141,
+      "is_new": true
+    },
+    {
+      "feature": "E_suit_quality_best",
+      "importance": 0.003467147471383214,
+      "rank": 143,
+      "is_new": true
+    },
+    {
+      "feature": "N_quick_tricks",
+      "importance": 0.0034502423368394375,
+      "rank": 149,
+      "is_new": true
+    },
+    {
+      "feature": "N_total_points",
+      "importance": 0.0034319977276027203,
+      "rank": 155,
+      "is_new": true
+    }
+  ]
+}

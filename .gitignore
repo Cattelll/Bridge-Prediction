@@ -35,6 +35,9 @@ outputs/models/*
 outputs/results/*
 !outputs/results/.gitkeep
 
+# Experiment model binaries (keep JSON/CSV metrics, drop .pkl)
+experiments/**/outputs/**/*.pkl
+
 # Logs
 *.log
 logs/

@@ -17,6 +17,21 @@ masih dari run lama (6.963 papan/156 fitur). Jalankan ulang notebook 01→04
 sebelum mengklaim hasil sepenuhnya konsisten. Ringkasan lengkap di
 [docs/SUMMARY.md](docs/SUMMARY.md).
 
+**Perbaikan metodologi split (2026-07-09, sore)**: ditemukan kebocoran
+data — BBO vugraph mencatat tiap papan dua kali (open/closed room, kartu
+identik), dan `train_test_split` acak biasa membiarkan ~46% pasangan itu
+terpecah ke split berbeda (~60% baris val/test punya "kembaran" tangan
+identik di train). `build_dataset()` di `src/preprocessing/dataset_builder.py`
+sekarang pakai `StratifiedGroupKFold` dikelompokkan per papan fisik
+(`_source_file` + `_board_number`) supaya pasangan open/closed room selalu
+satu split. Dataset & model di atas sudah pakai split yang diperbaiki ini
+(rebuild + retrain 2026-07-09). Detail investigasi & angka before/after ada
+di [experiments/2026-07-09/README.md](experiments/2026-07-09/README.md).
+Eksperimen lanjutan (tuning, SMOTE, two-stage, feature engineering, boosting
+alternatif) ada di [experiments/2026-07-09/](experiments/2026-07-09/) —
+belum pernah di-retrain di atas split yang diperbaiki ini kecuali disebutkan
+eksplisit sudah diulang.
+
 ---
 
 ## Batas Ruang Lingkup
@@ -109,6 +124,10 @@ outputs/results/               PNG visualisasi + JSON hasil — tidak di-git
 1. LINParser.parse_directory("data/raw/")  →  list[BoardRecord]
 2. extract_features(board)                 →  dict (164 fitur + metadata + 3 target)
 3. build_dataset()                         →  deduplicate, encode label, split 70/15/15
+                                               (group-aware: dikelompokkan per papan
+                                               fisik _source_file+_board_number, supaya
+                                               pasangan open/closed-room BBO — kartu
+                                               identik — tidak terpecah lintas split)
 4. Model.fit(X_train, y_train)
 5. evaluate(y_true, y_pred, y_proba, le)   →  dict metrik
 ```
@@ -145,18 +164,23 @@ Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 ## Hasil Final
 
 *(test set, retrain 2026-07-09 di atas 506 file / 10.223 papan / 164 fitur / 35 kelas,
-`n_estimators=300` untuk ketiga model — disamakan dari RF sebelumnya 200)*
+`n_estimators=300` untuk ketiga model, split **group-aware** — lihat "Status Proyek"
+di atas untuk kenapa split diubah)*
 
 | Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
 |-------|----------|-------|-------|----------|-------------|
-| RandomForest | 46.3% | 75.7% | 85.8% | 0.244 | 0.448 |
-| **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
-| LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
+| RandomForest | 44.9% | 71.8% | 82.0% | 0.278 | 0.465 |
+| **XGBoost** | **52.1%** | **76.3%** | **85.1%** | **0.290** | **0.481** |
+| LightGBM | 51.7% | 74.6% | 84.0% | 0.279 | 0.467 |
 
-XGBoost unggul accuracy, top-k, & F1 weighted; LightGBM unggul F1 Macro (class imbalance).
-Sumber: `outputs/results/test_comparison.csv`. Menaikkan RF dari 200→300 trees tidak
-memberi perbaikan berarti (accuracy/F1 turun ~0.1pp, top-k naik ~0.5-1pp — level noise);
-disamakan demi konsistensi eksperimen, bukan karena ada gain akurasi.
+XGBoost unggul di SEMUA metrik dengan split yang diperbaiki (sebelumnya LightGBM
+sempat unggul F1 Macro dengan split lama yang bocor). Sumber:
+`outputs/results/test_comparison.csv`. Perubahan angka dari hasil sebelumnya
+(46.3/52.9/51.7% acc) relatif kecil (±1-2pp) meski ~60% baris val/test punya
+kembaran tangan identik di train sebelum diperbaiki — efek kebocorannya
+sebagian saling meniadakan di level agregat (lihat
+[experiments/2026-07-09/README.md](experiments/2026-07-09/README.md) untuk
+detail), tapi metodologinya sekarang jauh lebih defensible.
 
 ---
 
@@ -180,3 +204,4 @@ disamakan demi konsistensi eksperimen, bukan karena ada gain akurasi.
 | Urutan kolom fitur | Model .pkl terserialisasi dengan urutan ini |
 | `target_base` sebagai target utama | Semua model dilatih dan dievaluasi di atas ini |
 | Rasio split 70/15/15 | Digunakan di semua perbandingan model |
+| Split group-aware (`StratifiedGroupKFold` per `_source_file`+`_board_number`) | Mencegah pasangan open/closed-room BBO (kartu identik) terpecah lintas train/val/test — lihat "Status Proyek" |

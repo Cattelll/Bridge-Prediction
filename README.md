@@ -10,16 +10,31 @@ Dataset berasal dari **506 file .lin** BBO (Bridge Base Online), menghasilkan **
 
 ## Hasil
 
-*(test set, retrain terakhir pada dataset 506 file / 10.223 papan, `n_estimators=300` di ketiga model)*
+*(test set, retrain 2026-07-09 pada dataset 506 file / 10.223 papan, `n_estimators=300`
+di ketiga model, split **group-aware** — lihat catatan metodologi di bawah)*
 
 | Model | Accuracy | Top-3 Acc | Top-5 Acc | F1 Macro | F1 Weighted |
 |-------|----------|-----------|-----------|----------|-------------|
-| Random Forest | 46.3% | 75.7% | 85.8% | 0.244 | 0.448 |
-| **XGBoost** | **52.9%** | **78.4%** | **86.6%** | 0.275 | **0.500** |
-| LightGBM | 51.7% | 76.9% | 85.3% | **0.280** | 0.486 |
+| Random Forest | 44.9% | 71.8% | 82.0% | 0.278 | 0.465 |
+| **XGBoost** | **52.1%** | **76.3%** | **85.1%** | **0.290** | **0.481** |
+| LightGBM | 51.7% | 74.6% | 84.0% | 0.279 | 0.467 |
 
-> XGBoost unggul dalam Accuracy, Top-k, & F1 Weighted; LightGBM unggul dalam F1 Macro (penanganan class imbalance).
+> XGBoost unggul di semua metrik kali ini (accuracy, top-k, F1 macro, F1 weighted).
 > Lihat [docs/SUMMARY.md](docs/SUMMARY.md) untuk ringkasan lengkap & [outputs/results/REPORT.md](outputs/results/REPORT.md) untuk hasil mentah.
+
+> **Catatan metodologi (2026-07-09)**: split train/val/test sebelumnya memakai
+> `train_test_split` acak biasa. BBO vugraph mencatat tiap papan dua kali
+> ("open room"/"closed room" — dua pasangan membidik kartu yang **sama persis**),
+> dan ~46% pasangan itu ternyata terpecah ke split berbeda, sehingga ~60% baris
+> val/test punya "kembaran" tangan identik di train — kebocoran data yang
+> membuat sebagian akurasi berasal dari hafalan pasangan, bukan generalisasi.
+> Split sekarang **group-aware** (`StratifiedGroupKFold` dikelompokkan per
+> papan fisik, `src/preprocessing/dataset_builder.py`) — pasangan open/closed
+> room selalu berada di split yang sama. Angka di atas sudah memakai split
+> yang diperbaiki; perubahannya kecil (±1-2pp) karena efek kebocorannya
+> sebagian saling meniadakan secara agregat, tapi metodologinya sekarang
+> defensible. Detail investigasi & angka before/after di
+> [experiments/2026-07-09/README.md](experiments/2026-07-09/README.md).
 
 ## Struktur Proyek
 

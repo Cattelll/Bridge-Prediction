@@ -17,8 +17,9 @@ import pickle
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.preprocessing import LabelEncoder
 
 from src.parser import LINParser
@@ -132,39 +133,59 @@ def build_dataset(
     print(f"      Encoder saved: {encoder_path}")
 
     # ------------------------------------------------------------------
-    # 4. Train / val / test split
+    # 4. Train / val / test split — GROUP-AWARE by physical deal
     # ------------------------------------------------------------------
-    print("[5/5] Splitting...")
+    # BBO vugraph records each board twice ("open room" / "closed room"):
+    # two different pairs bid the SAME dealt hands. That means ~all
+    # hand-based features (HCP, shape, fit, stoppers, LTC, ...) are
+    # identical between the two rows of a pair — only the auction/
+    # contract differs. A plain random split let ~46% of these pairs
+    # fall into different partitions, so ~60% of val/test rows had an
+    # identical-hand "twin" sitting in train (verified empirically:
+    # val/test accuracy on those rows was 92-95% when the twin bid the
+    # SAME contract vs 23-28% when it bid a DIFFERENT one — the model
+    # was partly memorizing deals, not generalizing). Grouping by
+    # (_source_file, _board_number) keeps every pair on the same side
+    # of the split, eliminating that leakage.
+    print("[5/5] Splitting (group-aware by source_file + board_number)...")
 
-    # Stratified split (falls back to random if any class has < 2 members)
-    val_test_ratio = val_ratio + test_ratio
-    min_class_count = df["label"].value_counts().min()
-    use_stratify = min_class_count >= 2
+    groups = df["_source_file"].astype(str) + "||" + df["_board_number"].astype(str)
 
-    if not use_stratify:
-        print(f"[WARN] {(df['label'].value_counts() < 2).sum()} class(es) have <2 members "
-              "— falling back to non-stratified split.")
+    N_FOLDS = 20  # 14 train / 3 val / 3 test folds == 70% / 15% / 15%
+    sgkf = StratifiedGroupKFold(n_splits=N_FOLDS, shuffle=True, random_state=random_seed)
 
-    df_train, df_temp = train_test_split(
-        df,
-        test_size=val_test_ratio,
-        stratify=df["label"] if use_stratify else None,
-        random_state=random_seed,
-    )
-    relative_val = val_ratio / val_test_ratio
+    fold_of_row = np.empty(len(df), dtype=int)
+    for fold_idx, (_, fold_idx_rows) in enumerate(sgkf.split(df, df["label"], groups)):
+        fold_of_row[fold_idx_rows] = fold_idx
 
-    min_temp = df_temp["label"].value_counts().min()
-    use_stratify_temp = min_temp >= 2
-    df_val, df_test = train_test_split(
-        df_temp,
-        test_size=1.0 - relative_val,
-        stratify=df_temp["label"] if use_stratify_temp else None,
-        random_state=random_seed,
-    )
+    n_train_folds = round(N_FOLDS * train_ratio)
+    n_val_folds = round(N_FOLDS * val_ratio)
+    train_folds = set(range(0, n_train_folds))
+    val_folds = set(range(n_train_folds, n_train_folds + n_val_folds))
+    test_folds = set(range(n_train_folds + n_val_folds, N_FOLDS))
+
+    df_train = df[np.isin(fold_of_row, list(train_folds))].reset_index(drop=True)
+    df_val = df[np.isin(fold_of_row, list(val_folds))].reset_index(drop=True)
+    df_test = df[np.isin(fold_of_row, list(test_folds))].reset_index(drop=True)
 
     print(f"      Train : {len(df_train)}")
     print(f"      Val   : {len(df_val)}")
     print(f"      Test  : {len(df_test)}")
+
+    # Sanity check: no group (physical deal) should appear in more than
+    # one split.
+    g_train = set((df_train["_source_file"].astype(str) + "||" + df_train["_board_number"].astype(str)))
+    g_val = set((df_val["_source_file"].astype(str) + "||" + df_val["_board_number"].astype(str)))
+    g_test = set((df_test["_source_file"].astype(str) + "||" + df_test["_board_number"].astype(str)))
+    overlap = (g_train & g_val) | (g_train & g_test) | (g_val & g_test)
+    if overlap:
+        raise RuntimeError(f"Group leakage across splits: {len(overlap)} group(s) appear in >1 split")
+    print("      No cross-split group leakage (verified).")
+
+    missing_classes = set(df["label"]) - set(df_train["label"])
+    if missing_classes:
+        names = [le.inverse_transform([c])[0] for c in missing_classes]
+        print(f"[WARN] {len(missing_classes)} class(es) absent from train after group-aware split: {names}")
 
     # Save splits
     splits = {"train": df_train, "val": df_val, "test": df_test, "full": df}
