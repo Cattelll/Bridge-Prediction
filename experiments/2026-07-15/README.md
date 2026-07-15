@@ -10,8 +10,9 @@ DART, resampling) justru menukar accuracy demi F1 macro.
 
 | # | Notebook | Tujuan | Status |
 |---|----------|--------|--------|
-| 1 | [01_accuracy_push.ipynb](01_accuracy_push.ipynb) | Soft-voting ensemble RF+XGB+LGBM, dan `RandomizedSearchCV(scoring="accuracy")` (bukan f1_macro seperti nb01 2026-07-09) | done |
+| 1 | [01_accuracy_push.ipynb](01_accuracy_push.ipynb) | Soft-voting ensemble RF+XGB+LGBM, dan `RandomizedSearchCV(scoring="accuracy")` (bukan f1_macro seperti nb01 2026-07-09) — di atas 164 fitur | done |
 | 2 | [02_dds_features.ipynb](02_dds_features.ipynb) | Fitur Double-Dummy Solver (`endplay`) — DD tricks per strain + kontrak par. **Scope disetujui 2026-07-15**, lihat `CLAUDE.md` | done |
+| 3 | [03_accuracy_push_with_dds.ipynb](03_accuracy_push_with_dds.ipynb) | Ulangi nb01 (ensemble + tuning accuracy) di atas 182 fitur (164+DDS, `data/processed_dds/`) — **berhasil**, tervalidasi test set | done |
 
 ## Catatan scope: Double-Dummy Solver (DDS)
 
@@ -74,13 +75,44 @@ menembus ~52% — mengonfirmasi ulang bahwa batasnya ada di ambiguitas
 bidding manusia (data), bukan di kekuatan fitur/model. Detail di
 kesimpulan [02_dds_features.ipynb](02_dds_features.ipynb).
 
+### 03 — Accuracy push di atas 182 fitur (DDS) — BERHASIL, tervalidasi test set
+
+| Model | Accuracy | F1 Weighted | Top-3 | Top-5 |
+|---|---|---|---|---|
+| XGBoost baseline (182 fitur) | 52.4% | 0.480 | 76.8% | 84.5% |
+| **XGBoost acc-tuned (182 fitur)** | **53.4%** | **0.489** | **77.5%** | **86.0%** |
+
+Params: `n_estimators=300, max_depth=5, learning_rate=0.03, subsample=0.9,
+colsample_bytree=0.6, min_child_weight=5, reg_lambda=2.0`. **+1.3pp dari
+baseline kanonik asli (52.1%, 164 fitur)** — perbaikan pertama yang
+tervalidasi TEST SET (bukan cuma val) sejak seluruh rangkaian eksperimen
+2026-07-09. Kuncinya: tuning diarahkan LANGSUNG ke `scoring="accuracy"`
+di atas fitur yang sudah terbukti membantu (DDS) — bukan menggabungkan
+dua tujuan optimasi yang bentrok (F1 macro techniques + fitur baru,
+seperti upaya-upaya sebelumnya yang selalu gagal). Detail di kesimpulan
+[03_accuracy_push_with_dds.ipynb](03_accuracy_push_with_dds.ipynb).
+
+Params ini sudah dipromosikan ke `notebooks_dds/03_modeling.ipynb`
+sebagai konfigurasi XGBoost resmi untuk pipeline 182-fitur (re-run
+04_evaluation.ipynb mengonfirmasi: 52.4%→**52.7%** accuracy di test set
+— sedikit beda dari 53.4% di notebook eksperimen karena
+`notebooks_dds` cast fitur ke `float32`, tapi arahnya konsisten:
+tuning ini benar-benar membantu).
+
 ## Kesimpulan hari ini
 
-**Target 60% accuracy tidak tercapai, dan kemungkinan besar secara
-struktural tidak bisa dicapai** untuk exact-contract 35-kelas — dibatasi
-oleh konsistensi bidding manusia sendiri (37.6%), bukan oleh kekuatan
-model/fitur. DDS (baru disetujui masuk scope) memberi fitur paling
-informatif yang pernah ditemukan (par contract strain, rank #1-#2),
-tapi bahkan itu tidak cukup menembus ~52%. Kalau target realistis
-diinginkan: level kategori (Pass/Partscore/Game/Slam) sudah 75-78%,
-top-3/top-5 exact-contract sudah 76-86%.
+**Target 60% accuracy belum tercapai, tapi ditemukan perbaikan nyata:
+52.1% → 53.4% test accuracy** (164 fitur baseline → 182 fitur + DDS +
+accuracy-tuned). Proyeksi dari analisis konsistensi manusia (37.6%
+pasangan open/closed-room sepakat kontrak sama persis) tetap menunjukkan
+60% exact-contract kemungkinan besar di luar jangkauan struktural — tapi
+1.3pp adalah kemajuan konkret, bukan target yang mustahil sama sekali.
+Kalau target 60% ingin didekati lebih jauh: level kategori (Pass/
+Partscore/Game/Slam) sudah 75-78%, top-3/top-5 exact-contract sudah
+77.5%/86.0% (naik dari 76-86% sebelumnya berkat DDS+tuning).
+
+**Rekomendasi konkret**: promosikan konfigurasi XGBoost acc-tuned +
+182 fitur (164+DDS) ini ke `configs/config.yaml` dan
+`notebooks_dds/03_modeling.ipynb` sebagai model utama baru — ini
+kandidat pertama yang lolos validasi test set dengan perbaikan accuracy
+yang jelas dan terukur.

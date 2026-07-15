@@ -36,6 +36,26 @@ di ketiga model, split **group-aware** — lihat catatan metodologi di bawah)*
 > defensible. Detail investigasi & angka before/after di
 > [experiments/2026-07-09/README.md](experiments/2026-07-09/README.md).
 
+## Hasil (opsional): + Double-Dummy Solver
+
+Fitur Double-Dummy Solver (DDS) — di luar 164 fitur kanonik, disetujui
+masuk sebagai **fitur tambahan opsional** 2026-07-15 (lihat `CLAUDE.md`)
+setelah ditemukan bahwa akurasi sudah mendekati batas konsistensi
+bidding manusia sendiri (lihat [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md)).
+Pipeline paralel lengkap di [`notebooks_dds/`](notebooks_dds/) & `data/processed_dds/`
+(182 fitur = 164 kanonik + 18 DDS), tidak menggantikan pipeline utama di atas:
+
+| Model | Accuracy | F1 Weighted |
+|-------|----------|-------------|
+| Random Forest | 46.3% (+1.4pp) | 0.472 (+0.7pp) |
+| **XGBoost** (hyperparameter di-tune untuk 182 fitur) | **52.7%** (+0.6pp) | **0.480** |
+| LightGBM | 51.8% (+0.1pp) | 0.467 |
+
+Perbandingan terhadap baseline 164-fitur di tabel utama. XGBoost yang
+di-tune spesifik untuk kombinasi 182 fitur ini adalah kandidat terbaik
+sejauh ini secara keseluruhan proyek. Detail lengkap & narasi eksperimen
+di [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
+
 ## Struktur Proyek
 
 ```

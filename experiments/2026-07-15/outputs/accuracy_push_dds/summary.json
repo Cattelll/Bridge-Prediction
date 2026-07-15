@@ -1,0 +1,39 @@
+{
+  "generated": "2026-07-15T14:45:02.659501",
+  "best_by_accuracy_val": "Ensemble [acc-tuned XGB+LGBM only, 0.6/0.4]",
+  "best_accuracy_val": 0.5225048923679061,
+  "xgb_tuned_params": {
+    "subsample": 0.9,
+    "reg_lambda": 2.0,
+    "n_estimators": 300,
+    "min_child_weight": 5,
+    "max_depth": 5,
+    "learning_rate": 0.03,
+    "colsample_bytree": 0.6
+  },
+  "lgbm_tuned_params": {
+    "subsample": 0.6,
+    "num_leaves": 15,
+    "n_estimators": 500,
+    "min_child_samples": 20,
+    "max_depth": 10,
+    "learning_rate": 0.01,
+    "colsample_bytree": 0.6
+  },
+  "test_set_validation": {
+    "baseline_182_features": {
+      "accuracy": 0.5244618395303327,
+      "f1_macro": 0.2961822831760163,
+      "f1_weighted": 0.4801339990214296,
+      "top_3_accuracy": 0.7684279191128506,
+      "top_5_accuracy": 0.8454011741682974
+    },
+    "acc_tuned_182_features": {
+      "accuracy": 0.5335942596216569,
+      "f1_macro": 0.29223162694976984,
+      "f1_weighted": 0.4889623813448532,
+      "top_3_accuracy": 0.7749510763209393,
+      "top_5_accuracy": 0.8604044357469015
+    }
+  }
+}

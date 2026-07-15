@@ -32,6 +32,21 @@ alternatif) ada di [experiments/2026-07-09/](experiments/2026-07-09/) —
 belum pernah di-retrain di atas split yang diperbaiki ini kecuali disebutkan
 eksplisit sudah diulang.
 
+**Fitur Double-Dummy Solver + pipeline paralel (2026-07-15)**: fitur DDS
+(`src/features/dds.py`, `endplay`) disetujui masuk scope sebagai fitur
+TAMBAHAN opsional (lihat "Batas Ruang Lingkup" di bawah), setelah analisis
+menunjukkan akurasi sudah mendekati batas konsistensi bidding manusia
+sendiri (37.6% pasangan open/closed-room BBO sepakat kontrak sama persis —
+`experiments/2026-07-15/README.md`). Pipeline lengkap paralel di
+[`notebooks_dds/`](notebooks_dds/) + `data/processed_dds/` (182 fitur =
+164 kanonik + 18 DDS), dieksekusi penuh 01→04, **tidak mengubah** pipeline
+164-fitur kanonik di atas. Hasil: XGBoost dengan hyperparameter di-tune
+khusus untuk 182 fitur (`n_estimators=300, max_depth=5, learning_rate=0.03,
+subsample=0.9, colsample_bytree=0.6, min_child_weight=5, reg_lambda=2.0`)
+mencapai **52.7% accuracy test set** (naik dari 52.1% baseline 164-fitur)
+— kandidat terbaik proyek sejauh ini. Detail lengkap di
+[experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
+
 ---
 
 ## Batas Ruang Lingkup
