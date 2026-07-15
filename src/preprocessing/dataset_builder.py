@@ -34,6 +34,35 @@ _META_COLS = {
 _TARGET_COLS = {"target", "target_base", "target_category"}
 
 
+def _get_dds_dataframe(boards, dds_cache_path: str | Path | None = None) -> pd.DataFrame:
+    """Load cached DDS features if available, else compute them (slow, ~1hr/500 files).
+
+    Both paths yield the same raw schema (`dd_par_denom` as a single 0-4 int);
+    `expand_par_denom()` one-hot-encodes it uniformly regardless of source.
+    """
+    from src.features.dds import expand_par_denom
+
+    if dds_cache_path is not None and Path(dds_cache_path).exists():
+        print(f"      Loading cached DDS features: {dds_cache_path}")
+        df_dds = pd.read_csv(dds_cache_path)
+    else:
+        print("      No DDS cache found — computing from scratch (this is slow)...")
+        from src.features.dds import compute_dds_features
+
+        rows = []
+        for b in boards:
+            row = compute_dds_features(b)
+            if row is None:
+                continue
+            row["_source_file"] = b.source_file
+            row["_room"] = b.room
+            row["_board_number"] = b.board_number
+            rows.append(row)
+        df_dds = pd.DataFrame(rows)
+
+    return expand_par_denom(df_dds)
+
+
 def build_dataset(
     raw_dir: str | Path = "data/raw",
     output_dir: str | Path = "data/processed",
@@ -43,19 +72,26 @@ def build_dataset(
     test_ratio: float = 0.15,
     random_seed: int = 42,
     remove_pass: bool = False,
+    include_dds: bool = False,
+    dds_cache_path: str | Path | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Parse LIN files, extract features, clean, encode, and split.
 
     Args:
-        raw_dir       : directory containing .lin files
-        output_dir    : where to save processed CSVs
-        target_col    : which target to use ('target_base', 'target', 'target_category')
-        train_ratio   : fraction for training
-        val_ratio     : fraction for validation
-        test_ratio    : fraction for test
-        random_seed   : reproducibility seed
-        remove_pass   : if True, drop passed-out boards from the dataset
+        raw_dir        : directory containing .lin files
+        output_dir     : where to save processed CSVs
+        target_col     : which target to use ('target_base', 'target', 'target_category')
+        train_ratio    : fraction for training
+        val_ratio      : fraction for validation
+        test_ratio     : fraction for test
+        random_seed    : reproducibility seed
+        remove_pass    : if True, drop passed-out boards from the dataset
+        include_dds    : if True, add Double-Dummy Solver features (optional,
+                         see CLAUDE.md scope — requires `endplay`)
+        dds_cache_path : path to a precomputed DDS CSV (keyed by
+                         _source_file/_room/_board_number) to avoid recomputing;
+                         if None or missing, DDS is computed from scratch
     """
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-9
 
@@ -131,6 +167,28 @@ def build_dataset(
     json_path = output_dir / "label_map.json"
     json_path.write_text(json.dumps(label_map, indent=2))
     print(f"      Encoder saved: {encoder_path}")
+
+    # ------------------------------------------------------------------
+    # 3b. Optional: Double-Dummy Solver features
+    # ------------------------------------------------------------------
+    if include_dds:
+        print("[DDS] Menambahkan fitur Double-Dummy Solver...")
+        df_dds = _get_dds_dataframe(boards, dds_cache_path)
+        dds_feature_cols = [
+            c for c in df_dds.columns if c not in ("_source_file", "_room", "_board_number")
+        ]
+        before = len(df)
+        df = df.merge(df_dds, on=["_source_file", "_room", "_board_number"], how="left")
+        assert len(df) == before, "DDS join changed row count — identity key isn't unique"
+
+        n_missing = df[dds_feature_cols].isnull().any(axis=1).sum()
+        if n_missing:
+            print(f"[WARN] {n_missing} row(s) missing DDS values — dropping them")
+            df = df.dropna(subset=dds_feature_cols).reset_index(drop=True)
+
+        feature_cols = feature_cols + dds_feature_cols
+        print(f"      DDS fitur ditambahkan: {len(dds_feature_cols)} "
+              f"(total fitur: {len(feature_cols)})")
 
     # ------------------------------------------------------------------
     # 4. Train / val / test split — GROUP-AWARE by physical deal

@@ -28,12 +28,18 @@ data/interim/*
 !data/interim/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+data/processed_dds/*
+!data/processed_dds/.gitkeep
 
 # Model files (binary, large)
 outputs/models/*
 !outputs/models/.gitkeep
 outputs/results/*
 !outputs/results/.gitkeep
+outputs/models_dds/*
+!outputs/models_dds/.gitkeep
+outputs/results_dds/*
+!outputs/results_dds/.gitkeep
 
 # Experiment model binaries (keep JSON/CSV metrics, drop .pkl)
 experiments/**/outputs/**/*.pkl
