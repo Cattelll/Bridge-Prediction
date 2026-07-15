@@ -22,7 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 dev     = ["pytest>=7.0", "ruff>=0.4"]
-experiments = ["imbalanced-learn>=0.12"]
+experiments = ["imbalanced-learn>=0.12", "endplay>=0.5.11"]
 
 [tool.setuptools.packages.find]
 where = ["."]

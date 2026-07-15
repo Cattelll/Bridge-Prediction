@@ -1,0 +1,163 @@
+{
+  "generated": "2026-07-15T13:34:04.457033",
+  "dds_feature_cols": [
+    "ns_dd_S",
+    "ew_dd_S",
+    "ns_dd_H",
+    "ew_dd_H",
+    "ns_dd_D",
+    "ew_dd_D",
+    "ns_dd_C",
+    "ew_dd_C",
+    "ns_dd_N",
+    "ew_dd_N",
+    "dd_par_level",
+    "dd_par_declarer_is_ns",
+    "dd_par_score",
+    "dd_par_denom_S",
+    "dd_par_denom_H",
+    "dd_par_denom_D",
+    "dd_par_denom_C",
+    "dd_par_denom_N"
+  ],
+  "results": {
+    "A: XGBoost baseline (164 fitur)": {
+      "accuracy": 0.512720156555773,
+      "f1_macro": 0.2685239995412779,
+      "f1_weighted": 0.4685455385001663,
+      "top_3_accuracy": 0.7508153946510111,
+      "top_5_accuracy": 0.8480104370515329
+    },
+    "B: XGBoost +DDS (182 fitur)": {
+      "accuracy": 0.5114155251141552,
+      "f1_macro": 0.2785931860686217,
+      "f1_weighted": 0.47178676404296693,
+      "top_3_accuracy": 0.7514677103718199,
+      "top_5_accuracy": 0.8460534898891063
+    },
+    "C: XGBoost +DDS +sample_weight +dart (182 fitur)": {
+      "accuracy": 0.4846705805609915,
+      "f1_macro": 0.31541145246378766,
+      "f1_weighted": 0.49144275778493807,
+      "top_3_accuracy": 0.7364644487932159,
+      "top_5_accuracy": 0.8330071754729289
+    },
+    "D (REF): XGBoost +sample_weight +dart, TANPA DDS (164 fitur)": {
+      "accuracy": 0.4918460534898891,
+      "f1_macro": 0.3216657802965872,
+      "f1_weighted": 0.49833622364397034,
+      "top_3_accuracy": 0.7482061317677756,
+      "top_5_accuracy": 0.8330071754729289
+    }
+  },
+  "dds_feature_ranks": [
+    {
+      "feature": "dd_par_denom_H",
+      "importance": 0.02622099593281746,
+      "rank": 1,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_denom_S",
+      "importance": 0.022526327520608902,
+      "rank": 2,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_denom_N",
+      "importance": 0.01678750291466713,
+      "rank": 6,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_level",
+      "importance": 0.016157766804099083,
+      "rank": 7,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_denom_D",
+      "importance": 0.011222044005990028,
+      "rank": 15,
+      "is_dds": true
+    },
+    {
+      "feature": "ns_dd_S",
+      "importance": 0.009721641428768635,
+      "rank": 19,
+      "is_dds": true
+    },
+    {
+      "feature": "ew_dd_H",
+      "importance": 0.009556896984577179,
+      "rank": 20,
+      "is_dds": true
+    },
+    {
+      "feature": "ew_dd_S",
+      "importance": 0.009389040060341358,
+      "rank": 21,
+      "is_dds": true
+    },
+    {
+      "feature": "ns_dd_H",
+      "importance": 0.00906636007130146,
+      "rank": 22,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_denom_C",
+      "importance": 0.008128193207085133,
+      "rank": 28,
+      "is_dds": true
+    },
+    {
+      "feature": "ns_dd_C",
+      "importance": 0.006472335197031498,
+      "rank": 40,
+      "is_dds": true
+    },
+    {
+      "feature": "ns_dd_D",
+      "importance": 0.0056548770517110825,
+      "rank": 51,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_score",
+      "importance": 0.00541831785812974,
+      "rank": 55,
+      "is_dds": true
+    },
+    {
+      "feature": "ew_dd_C",
+      "importance": 0.004939507693052292,
+      "rank": 57,
+      "is_dds": true
+    },
+    {
+      "feature": "ew_dd_N",
+      "importance": 0.004933563526719809,
+      "rank": 58,
+      "is_dds": true
+    },
+    {
+      "feature": "ns_dd_N",
+      "importance": 0.0049302964471280575,
+      "rank": 60,
+      "is_dds": true
+    },
+    {
+      "feature": "ew_dd_D",
+      "importance": 0.004609933588653803,
+      "rank": 68,
+      "is_dds": true
+    },
+    {
+      "feature": "dd_par_declarer_is_ns",
+      "importance": 0.0037385267205536366,
+      "rank": 97,
+      "is_dds": true
+    }
+  ]
+}

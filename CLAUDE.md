@@ -39,12 +39,19 @@ eksplisit sudah diulang.
 ### Yang ada di dalam ruang lingkup
 - Tiga model tree-based: RF, XGBoost, LightGBM
 - 164 fitur dari data kartu + lelang
+- **Fitur turunan double-dummy solver (`endplay`)** — disetujui masuk
+  scope 2026-07-15, setelah ditemukan bahwa akurasi model sudah
+  mendekati batas konsistensi bidding manusia sendiri (37.6% pasangan
+  open/closed-room BBO sepakat kontrak sama persis). Fitur: DD tricks
+  per strain untuk NS/EW (`calc_dd_table`) dan kontrak par
+  (`par()`) — dipakai sebagai fitur TAMBAHAN opsional di
+  `experiments/`, bukan pengganti 164 fitur kanonik, kecuali hasilnya
+  divalidasi cukup berharga untuk dipromosikan ke pipeline utama.
 - Target utama: `target_base` (36 kelas: PASS + 35 kontrak)
 - Evaluasi: accuracy, F1 macro/weighted, top-k accuracy, SHAP
 
 ### Yang di luar ruang lingkup — jangan ditambahkan tanpa diskusi
 - Neural network / deep learning
-- Double-dummy solver (optimal contract secara matematis)
 - Reinforcement learning / game theory
 - Real-time / streaming prediction
 - Web app / API serving
