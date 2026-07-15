@@ -1,0 +1,71 @@
+{
+  "generated": "2026-07-11T02:39:06.287709",
+  "new_feature_cols": [
+    "N_quick_tricks",
+    "N_total_points",
+    "N_suit_quality_best",
+    "E_quick_tricks",
+    "E_total_points",
+    "E_suit_quality_best",
+    "S_quick_tricks",
+    "S_total_points",
+    "S_suit_quality_best",
+    "W_quick_tricks",
+    "W_total_points",
+    "W_suit_quality_best",
+    "ns_quick_tricks",
+    "ns_total_points",
+    "ns_second_fit",
+    "ns_lott_level",
+    "ew_quick_tricks",
+    "ew_total_points",
+    "ew_second_fit",
+    "ew_lott_level",
+    "opener_hcp",
+    "opener_balanced",
+    "preemptive_opening"
+  ],
+  "reused_tuned_params_source": "experiments/2026-07-09/outputs/hyperparameter_tuning/summary.json",
+  "results": {
+    "ANCHOR: XGBoost baseline (164 fitur)": {
+      "accuracy": 0.512720156555773,
+      "f1_macro": 0.2685239995412779,
+      "f1_weighted": 0.4685455385001663,
+      "top_3_accuracy": 0.7508153946510111,
+      "top_5_accuracy": 0.8480104370515329,
+      "fit_seconds": 77.8
+    },
+    "ANCHOR: XGBoost +sample_weight+dart (164 fitur)": {
+      "accuracy": 0.4918460534898891,
+      "f1_macro": 0.3216657802965872,
+      "f1_weighted": 0.49833622364397034,
+      "top_3_accuracy": 0.7482061317677756,
+      "top_5_accuracy": 0.8330071754729289,
+      "fit_seconds": 193.7
+    },
+    "V1: 187 fitur + sample_weight + dart": {
+      "accuracy": 0.4866275277234181,
+      "f1_macro": 0.31532216060303436,
+      "f1_weighted": 0.4932358109903344,
+      "top_3_accuracy": 0.741030658838878,
+      "top_5_accuracy": 0.8369210697977821,
+      "fit_seconds": 181.8
+    },
+    "V2: 187 fitur + RandomOverSampler + dart": {
+      "accuracy": 0.49249836921069795,
+      "f1_macro": 0.3067570203774968,
+      "f1_weighted": 0.4940035923971562,
+      "top_3_accuracy": 0.7384213959556425,
+      "top_5_accuracy": 0.827136333985649,
+      "fit_seconds": 2337.4
+    },
+    "V3: 187 fitur + sample_weight + dart + tuned params (nb01)": {
+      "accuracy": 0.4690150032615786,
+      "f1_macro": 0.3127093848380477,
+      "f1_weighted": 0.4837372570684648,
+      "top_3_accuracy": 0.7377690802348337,
+      "top_5_accuracy": 0.8330071754729289,
+      "fit_seconds": 182.6
+    }
+  }
+}
