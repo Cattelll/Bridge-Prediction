@@ -114,6 +114,54 @@ dengan hasil eksperimen di atas (memverifikasi pipeline resmi dan
 eksperimen konsisten). `data/processed/` (164-fitur kanonik, notebooks/
 biasa) **tidak diubah** — tetap terpisah sesuai desain awal.
 
+**Perluasan besar — arsip `angelfire.com` via Wayback Machine (2026-07-16,
+lanjutan)**: diminta cari lagi data PBN karena terbukti efektif menaikkan
+akurasi. Ditemukan link eksternal di `tistis.nl` menunjuk ke
+`angelfire.com/games2/pbnarchive/pbn/` — situs aslinya sudah **mati**
+(DNS `www.angelfire.com` tidak resolve, `angelfire.com` root menolak
+koneksi), tapi seluruh isinya (57 arsip zip) berhasil direcover lewat
+Wayback Machine (snapshot 2019-08-06), 56/57 berhasil diunduh utuh
+(1 file, `capgem00.zip`, snapshot-nya sendiri korup/truncated di
+Wayback — tidak bisa direcover, dilewati). Isi: 57 arsip kejuaraan dunia
+1996-2002 (Bermuda Bowl, Venice Cup, Vanderbilt, World Bridge Team
+Olympiad, Cap Gemini, Cavendish Invitational, Dutch Teams Final,
+European Team Championships, ACBL International Team Trials, dll.) —
+3 di antaranya (`etc99`, `eyc98`, `eyc00`) ternyata **byte-identik**
+dengan file yang sudah dimiliki dari `tistis.nl` (sumber sama, dua
+mirror), dikeluarkan untuk mencegah duplikasi. Setelah verifikasi (cek
+player-name tags untuk GIB/WBridge5/bot — **bersih**, tidak ada
+kontaminasi AI), **1.178 file PBN baru** ditambahkan ke `data/raw_pbn/`
+(43 computerbridge.se + 169 tistis.nl + 1.178 angelfire.com = 1.390
+file total, plus 606 file LIN).
+
+Selama komputasi DDS untuk board baru ini (37.489 board), ditemukan
+**bug crash serius**: 53 board dari arsip lama (Dutch Teams Final
+1996/1998, ETC 2001, WC98, Politiken 1997) punya kartu duplikat/hilang
+akibat kesalahan transkripsi manual era 1990-2000an — tiap tangan
+individual tetap terhitung 13 kartu, tapi total dek gabungan cuma
+44-49 kartu unik (bukan 52). Memberi input ini ke `endplay`'s DDS solver
+menyebabkan **segfault** (bukan exception biasa, meng-crash seluruh
+proses Python) — inilah penyebab dua percobaan komputasi DDS pertama
+gagal (deadlock multiprocessing dan segfault langsung). Diperbaiki
+dengan validasi 52-kartu-unik di
+`src/features/dds.py::compute_dds_features()` sebelum memanggil
+`endplay`, mengembalikan `None` alih-alih crash untuk board semacam
+ini — permanen melindungi SEMUA sumber (LIN maupun PBN), bukan cuma
+yang baru. Komputasi DDS akhirnya selesai sekuensial (single-process,
+karena `multiprocessing.Pool` sempat deadlock tanpa sebab jelas di
+mesin ini — pelajaran: prioritaskan keandalan atas kecepatan untuk
+komputasi panjang; skrip juga ditulis ulang dengan checkpoint tiap
+1.000 board setelah dua kegagalan sebelumnya kehilangan seluruh
+progres). Dataset gabungan dibangun ulang: **49.755 board** (naik dari
+21.675, **+130%**), 36 kelas, 182 fitur. **Hasil terbaik proyek — baru
+lagi**: LightGBM + `class_weight="balanced"` → **56.4% accuracy, F1
+macro 0.410, F1 weighted 0.557** (naik dari 54.3%/0.349/0.519 — F1
+macro naik +6.1pp / ~17.5% relatif), tetap unggul XGBoost
+(56.1%/0.342/0.532) di SEMUA metrik. Promosi ke `notebooks_dds/`
+(notebook 01→04 dieksekusi ulang penuh) mengonfirmasi angka identik
+dengan eksperimen. Detail lengkap di
+[experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
+
 ---
 
 ## Batas Ruang Lingkup

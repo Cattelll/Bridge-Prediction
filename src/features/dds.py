@@ -45,6 +45,23 @@ def compute_dds_features(board: BoardRecord) -> Optional[dict]:
     ):
         return None
 
+    # Some manually-transcribed archives (e.g. 1990s-2000s PBN exports) have
+    # the same card listed in two hands and another card missing entirely —
+    # each hand still reports 13 cards, but the deck isn't a real 52-card
+    # deck. endplay's DDS solver segfaults (not a catchable exception) on
+    # such input, so reject it before calling into the C library.
+    seen_cards: set[tuple[str, str]] = set()
+    for seat in SEATS_ORDER:
+        h = board.hands[seat]
+        for suit, cards in (("S", h.spades), ("H", h.hearts), ("D", h.diamonds), ("C", h.clubs)):
+            for rank in cards:
+                key = (suit, rank.upper())
+                if key in seen_cards:
+                    return None
+                seen_cards.add(key)
+    if len(seen_cards) != 52:
+        return None
+
     from endplay.dds import calc_dd_table, par
     from endplay.types import Deal, Vul, Player, Denom
 

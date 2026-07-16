@@ -1,0 +1,39 @@
+{
+  "generated": "2026-07-16T23:02:22.048597",
+  "data_sources": {
+    "lin_files": 606,
+    "pbn_files_total": 1390,
+    "pbn_files_new_today": 1178,
+    "pbn_source": "computerbridge.se (43) + tistis.nl (169) + angelfire.com via Wayback Machine (1178)",
+    "pbn_boards_total": 47712,
+    "malformed_boards_excluded_from_dds": 53
+  },
+  "dataset_size": {
+    "total_boards": 49755,
+    "train": 34832,
+    "val": 7462,
+    "test": 7461,
+    "n_features": 182,
+    "n_classes": 36
+  },
+  "bugs_fixed": [
+    "endplay DDS solver segfaults (uncatchable) on decks with duplicate/missing cards from old manual-transcription errors -- fixed with a 52-unique-card validation guard in compute_dds_features() before calling into the C library",
+    "multiprocessing.Pool deadlocked with no clear cause on this machine for long-running DDS computation -- switched to sequential single-process execution with periodic CSV checkpointing so a crash never loses more than ~1000 boards of progress"
+  ],
+  "results": {
+    "XGBoost acc-tuned (49.755 board)": {
+      "accuracy": 0.5610507974802306,
+      "f1_macro": 0.3416334300757195,
+      "f1_weighted": 0.5321952136578025,
+      "top_3_accuracy": 0.8174507438681142,
+      "top_5_accuracy": 0.8984050395389358
+    },
+    "LightGBM class_weight (49.755 board)": {
+      "accuracy": 0.5638654335879909,
+      "f1_macro": 0.4100981794076919,
+      "f1_weighted": 0.5566748562013479,
+      "top_3_accuracy": 0.8208015011392574,
+      "top_5_accuracy": 0.8971987669213242
+    }
+  }
+}

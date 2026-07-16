@@ -6,7 +6,7 @@ Penelitian perbandingan algoritma machine learning (Random Forest, XGBoost, Ligh
 
 Contract Bridge adalah permainan kartu yang melibatkan proses bidding (lelang) untuk menentukan kontrak — level dan jenis suit yang akan dimainkan. Memprediksi kontrak optimal secara otomatis merupakan masalah klasifikasi multikelas dengan 35 kelas target.
 
-Dataset berasal dari **506 file .lin** BBO (Bridge Base Online), menghasilkan **10.223 papan** setelah pembersihan & deduplikasi (35 kelas kontrak, 164 fitur).
+Dataset canonical (164-fitur) berasal dari **506 file .lin** BBO (Bridge Base Online), menghasilkan **10.223 papan** setelah pembersihan & deduplikasi (35 kelas kontrak, 164 fitur). Lihat bagian "data tambahan" di bawah untuk pipeline gabungan LIN+PBN 182-fitur yang jauh lebih besar (49.755 papan).
 
 ## Hasil
 
@@ -45,20 +45,24 @@ bidding manusia sendiri (lihat [experiments/2026-07-15/README.md](experiments/20
 Pipeline paralel lengkap di [`notebooks_dds/`](notebooks_dds/) & `data/processed_dds/`
 (182 fitur = 164 kanonik + 18 DDS), tidak menggantikan pipeline utama di atas.
 
-**2026-07-16**: pipeline ini diperbarui untuk memakai data gabungan LIN+PBN
-(606 file .lin + 212 file .pbn, **21.675 board, 36 kelas**) dan LightGBM
-sekarang eksplisit pakai `class_weight="balanced"` — hasil test set terbaru
-(notebook 01→04 dieksekusi penuh):
+**2026-07-16 (lanjutan)**: pipeline diperluas lagi dengan 1.178 file PBN baru
+dari arsip `angelfire.com` (mati, direcover via Wayback Machine — 57 arsip
+kejuaraan dunia 1996-2002: Bermuda Bowl, Venice Cup, Vanderbilt, World
+Bridge Team Olympiad, Cap Gemini, Cavendish, Dutch Teams Final, dll.).
+Data gabungan sekarang **606 file .lin + 1.390 file .pbn = 49.755 board,
+36 kelas** (naik dari 21.675, +130%). Hasil test set terbaru (notebook
+01→04 dieksekusi penuh):
 
 | Model | Accuracy | F1 Macro | F1 Weighted |
 |-------|----------|----------|-------------|
-| Random Forest | 44.8% | 0.312 | 0.463 |
-| XGBoost (hyperparameter di-tune untuk 182 fitur) | 54.0% | 0.294 | 0.504 |
-| **LightGBM (class_weight="balanced")** | **54.3%** | **0.349** | **0.519** |
+| Random Forest | 46.8% | 0.325 | 0.485 |
+| XGBoost (hyperparameter di-tune untuk 182 fitur) | 56.1% | 0.342 | 0.532 |
+| **LightGBM (class_weight="balanced")** | **56.4%** | **0.410** | **0.557** |
 
 LightGBM unggul di SEMUA metrik dan merupakan model yang direkomendasikan
-untuk pipeline `notebooks_dds/`. Perbandingan terhadap baseline 164-fitur
-di tabel utama.
+untuk pipeline `notebooks_dds/`. Data lebih banyak terbukti sangat efektif
+menaikkan akurasi — F1 macro naik +6.1pp (~17.5% relatif) dari penambahan
+data ini saja. Perbandingan terhadap baseline 164-fitur di tabel utama.
 
 ## Hasil (opsional): + data tambahan (non-BBO PBN + file baru)
 

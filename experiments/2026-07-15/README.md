@@ -16,6 +16,7 @@ DART, resampling) justru menukar accuracy demi F1 macro.
 | 4 | [04_class_imbalance_dds.ipynb](04_class_imbalance_dds.ipynb) | Atasi class imbalance (35 kelas timpang) di atas XGBoost acc-tuned + 182 fitur: class_weight/sample_weight, RandomOverSampler, SMOTE | done |
 | 5 | [05_combined_data_source.ipynb](05_combined_data_source.ipynb) | Perluasan data non-BBO (PBN, 1.314 board dari 7 final kejuaraan dunia) + 100 file LIN baru — **hasil terbaik proyek**: LightGBM+class_weight 53.6% acc, F1 macro 0.310 | done |
 | 6 | [06_combined_data_v2_more_pbn.ipynb](06_combined_data_v2_more_pbn.ipynb) | Perluasan PBN lanjutan (tistis.nl, 169 file baru) + perbaikan 3 bug parser/merge — **hasil terbaik proyek (baru)**: LightGBM+class_weight 54.3% acc, F1 macro 0.349, di 21.675 board | done |
+| 7 | [07_angelfire_expansion.ipynb](07_angelfire_expansion.ipynb) | Perluasan besar (angelfire.com via Wayback Machine, 1.178 file baru) + fix segfault DDS solver — **hasil terbaik proyek (lompatan terbesar)**: LightGBM+class_weight 56.4% acc, F1 macro 0.410, di 49.755 board | done |
 
 ## Catatan penting: permintaan crawler BBO ditolak
 
@@ -267,3 +268,60 @@ Angka ini identik dengan hasil notebook eksperimen 06 di atas — memverifikasi
 bahwa pipeline resmi dan eksperimen konsisten. `data/processed/` (164-fitur
 kanonik, `notebooks/` biasa) **tidak diubah**, tetap terpisah sesuai desain
 awal DDS sebagai fitur tambahan opsional.
+
+### 07 — Perluasan besar: arsip angelfire.com via Wayback Machine — LOMPATAN TERBESAR
+
+Diminta cari lagi data PBN karena terbukti efektif menaikkan akurasi.
+Ditemukan link eksternal di halaman `tistis.nl` menunjuk ke
+`angelfire.com/games2/pbnarchive/pbn/` — situs aslinya **mati** (DNS
+`www.angelfire.com` tidak resolve, root domain menolak koneksi), tapi
+seluruh isinya berhasil direcover lewat **Wayback Machine** (snapshot
+2019-08-06): 57 arsip zip kejuaraan dunia 1996-2002 (Bermuda Bowl,
+Venice Cup, Vanderbilt, World Bridge Team Olympiad, Cap Gemini,
+Cavendish, Dutch Teams Final, European Team Championships, ACBL
+International Team Trials, dll.), 56/57 berhasil diunduh utuh
+(`capgem00.zip` snapshotnya sendiri korup di Wayback, dilewati). 3 arsip
+(`etc99`, `eyc98`, `eyc00`) ternyata **byte-identik** dengan file yang
+sudah dimiliki dari `tistis.nl` (mirror yang sama) — dikeluarkan.
+Diverifikasi bersih dari kontaminasi bot (cek player-name tags untuk
+GIB/WBridge5/dll. — nihil, satu "hit" cuma nama manusia "Jack Zhao").
+**1.178 file PBN baru** ditambahkan ke `data/raw_pbn/`.
+
+**Bug crash serius ditemukan & diperbaiki** selama komputasi DDS untuk
+37.489 board baru: 53 board dari arsip lama (Dutch Teams Final
+1996/1998, ETC 2001, WC98, Politiken 1997) punya kartu duplikat/hilang
+dari kesalahan transkripsi manual 1990-2000an — tiap tangan tetap
+terhitung 13 kartu, tapi total dek gabungan cuma 44-49 kartu unik
+(bukan 52). Ini men-**segfault** `endplay`'s DDS solver (bukan exception
+biasa, meng-crash seluruh proses Python) — penyebab dua percobaan
+komputasi DDS pertama gagal (deadlock `multiprocessing.Pool` tanpa
+sebab jelas di mesin ini, lalu crash langsung setelah beralih ke
+sekuensial). Diperbaiki dengan validasi 52-kartu-unik di
+`src/features/dds.py::compute_dds_features()` sebelum memanggil
+`endplay` — melindungi SEMUA sumber data secara permanen. Skrip
+komputasi juga ditulis ulang dengan checkpoint tiap 1.000 board setelah
+dua kegagalan pertama kehilangan seluruh progres (~1-2 jam kerja).
+Komputasi akhirnya selesai sekuensial, ~2.9 jam untuk 37.489 board.
+
+| Model | Accuracy | F1 Macro | F1 Weighted |
+|---|---|---|---|
+| XGBoost acc-tuned (21.675 board) | 54.1% | 0.294 | 0.504 |
+| **XGBoost acc-tuned (49.755 board)** | **56.1%** (+2.1pp) | **0.342** (+4.8pp) | **0.532** (+2.8pp) |
+| LightGBM class_weight (21.675 board) | 54.3% | 0.349 | 0.519 |
+| **LightGBM class_weight (49.755 board)** | **56.4%** (+2.1pp) | **0.410** (+6.1pp) | **0.557** (+3.8pp) |
+
+**LightGBM+class_weight tetap kandidat terbaik proyek, unggul di SEMUA
+metrik**, dan marginnya atas XGBoost di F1 macro justru MELEBAR (0.410
+vs 0.342, dari 0.349 vs 0.294 sebelumnya) — mengonfirmasi pola sejak
+2026-07-09: lebih banyak data membantu `class_weight` menangani kelas
+langka lebih baik. Dataset gabungan sekarang **49.755 board** (naik
+dari 21.675, +130%), 36 kelas, 182 fitur. Dipromosikan langsung ke
+`notebooks_dds/` (notebook 01→04 dieksekusi ulang, angka identik).
+Detail lengkap di kesimpulan
+[07_angelfire_expansion.ipynb](07_angelfire_expansion.ipynb).
+
+**Catatan untuk perluasan berikutnya**: arsip angelfire.com ini
+kemungkinan besar adalah kumpulan PBN non-BBO legitimate terbesar yang
+tersisa dari era pra-2010. Sumber serupa mulai langka — perluasan lebih
+lanjut mungkin perlu jenis sumber lain, bukan sekadar PBN archive
+tambahan.
