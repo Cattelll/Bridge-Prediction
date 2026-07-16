@@ -24,12 +24,17 @@ build/
 # Data (raw & processed — often large/sensitive)
 data/raw/*
 !data/raw/.gitkeep
+data/raw_pbn/*
+!data/raw_pbn/.gitkeep
 data/interim/*
 !data/interim/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
 data/processed_dds/*
 !data/processed_dds/.gitkeep
+data/processed_combined/*
+!data/processed_combined/.gitkeep
+data/*_dds_cache*.csv
 
 # Model files (binary, large)
 outputs/models/*
@@ -40,6 +45,10 @@ outputs/models_dds/*
 !outputs/models_dds/.gitkeep
 outputs/results_dds/*
 !outputs/results_dds/.gitkeep
+outputs/models_combined/*
+!outputs/models_combined/.gitkeep
+outputs/results_combined/*
+!outputs/results_combined/.gitkeep
 
 # Experiment model binaries (keep JSON/CSV metrics, drop .pkl)
 experiments/**/outputs/**/*.pkl

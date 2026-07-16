@@ -48,13 +48,34 @@ Pipeline paralel lengkap di [`notebooks_dds/`](notebooks_dds/) & `data/processed
 | Model | Accuracy | F1 Weighted |
 |-------|----------|-------------|
 | Random Forest | 46.3% (+1.4pp) | 0.472 (+0.7pp) |
-| **XGBoost** (hyperparameter di-tune untuk 182 fitur) | **52.7%** (+0.6pp) | **0.480** |
+| XGBoost (hyperparameter di-tune untuk 182 fitur) | 52.7% (+0.6pp) | 0.480 |
 | LightGBM | 51.8% (+0.1pp) | 0.467 |
 
-Perbandingan terhadap baseline 164-fitur di tabel utama. XGBoost yang
-di-tune spesifik untuk kombinasi 182 fitur ini adalah kandidat terbaik
-sejauh ini secara keseluruhan proyek. Detail lengkap & narasi eksperimen
-di [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
+Perbandingan terhadap baseline 164-fitur di tabel utama.
+
+## Hasil (opsional): + data tambahan (non-BBO PBN + file baru)
+
+`data/raw/` diperluas dari 506 → 606 file .lin, ditambah **212 file PBN**
+dari sumber non-BBO: 7 final kejuaraan dunia via `computerbridge.se`
+(Bermuda Bowl, Venice Cup, Vanderbilt, Spingold, dll., 43 file) dan
+turnamen internasional lama via `tistis.nl` (ETC97/99, EYC98/00, IWBC,
+OKB, Papi Garozzo, 169 file) — semua diverifikasi bebas kontaminasi
+bidding komputer/bot sebelum dipakai (bukan dari scraping BBO, yang
+ToS-nya eksplisit melarang automation/scraping). Dataset gabungan di
+`data/processed_combined/` (182 fitur, **21.675 board** total, 36 kelas,
+group-aware split):
+
+| Model | Accuracy | F1 Macro | F1 Weighted |
+|-------|----------|----------|-------------|
+| XGBoost acc-tuned | 54.1% | 0.294 | 0.504 |
+| **LightGBM + class_weight** | **54.3%** | **0.349** | **0.519** |
+
+**LightGBM + class_weight di data gabungan adalah kandidat terbaik
+proyek secara keseluruhan** — accuracy tertinggi DAN F1 macro/weighted
+terbaik sekaligus, tanpa trade-off yang biasanya ada. Detail lengkap &
+narasi akuisisi data di
+[experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb](experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb)
+dan [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
 
 ## Struktur Proyek
 

@@ -1,0 +1,44 @@
+{
+  "generated": "2026-07-15T20:53:17.815346",
+  "data_sources": {
+    "lin_files_original": 506,
+    "lin_files_new_today": 100,
+    "lin_files_total": 606,
+    "pbn_files": 43,
+    "pbn_boards": 1314
+  },
+  "dataset_size": {
+    "train": 9508,
+    "val": 2037,
+    "test": 2036,
+    "total": 13581
+  },
+  "results": {
+    "XGBoost acc-tuned (data gabungan)": {
+      "accuracy": 0.5235756385068763,
+      "f1_macro": 0.2637885533732396,
+      "f1_weighted": 0.484055484549323,
+      "top_3_accuracy": 0.7843811394891945,
+      "top_5_accuracy": 0.868860510805501
+    },
+    "LightGBM class_weight (data gabungan)": {
+      "accuracy": 0.5363457760314342,
+      "f1_macro": 0.31000059630432414,
+      "f1_weighted": 0.5062851382606951,
+      "top_3_accuracy": 0.7784872298624754,
+      "top_5_accuracy": 0.8536345776031434
+    }
+  },
+  "reference_10223_boards": {
+    "XGBoost acc-tuned (10.223 board, REF)": {
+      "accuracy": 0.5270711024135681,
+      "f1_macro": 0.25071198222661645,
+      "f1_weighted": 0.4802467915918208
+    },
+    "LightGBM class_weight (10.223 board, REF)": {
+      "accuracy": 0.5257664709719504,
+      "f1_macro": 0.3067643072391079,
+      "f1_weighted": 0.4854029125273938
+    }
+  }
+}

@@ -44,7 +44,11 @@ def _get_dds_dataframe(boards, dds_cache_path: str | Path | None = None) -> pd.D
 
     if dds_cache_path is not None and Path(dds_cache_path).exists():
         print(f"      Loading cached DDS features: {dds_cache_path}")
-        df_dds = pd.read_csv(dds_cache_path)
+        # keep_default_na=False: some sources have an empty "" room (no
+        # open/closed distinction) — without this, "" round-trips through
+        # CSV as NaN, which later .astype(str) turns into the string "nan"
+        # instead of "", silently breaking the identity-key merge below.
+        df_dds = pd.read_csv(dds_cache_path, keep_default_na=False, na_values=[])
     else:
         print("      No DDS cache found — computing from scratch (this is slow)...")
         from src.features.dds import compute_dds_features
@@ -60,6 +64,9 @@ def _get_dds_dataframe(boards, dds_cache_path: str | Path | None = None) -> pd.D
             rows.append(row)
         df_dds = pd.DataFrame(rows)
 
+    for col in ("_source_file", "_room", "_board_number"):
+        df_dds[col] = df_dds[col].astype(str)
+
     return expand_par_denom(df_dds)
 
 
@@ -74,6 +81,7 @@ def build_dataset(
     remove_pass: bool = False,
     include_dds: bool = False,
     dds_cache_path: str | Path | None = None,
+    extra_boards: list | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Parse LIN files, extract features, clean, encode, and split.
@@ -92,6 +100,9 @@ def build_dataset(
         dds_cache_path : path to a precomputed DDS CSV (keyed by
                          _source_file/_room/_board_number) to avoid recomputing;
                          if None or missing, DDS is computed from scratch
+        extra_boards   : optional list of additional BoardRecord objects (e.g. from
+                         PBNParser) to fold in alongside the parsed LIN boards —
+                         for supplementary data sources beyond data/raw/*.lin
     """
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-9
 
@@ -106,6 +117,10 @@ def build_dataset(
     boards = parser.parse_directory(raw_dir)
     print(f"      Boards loaded: {len(boards)}")
 
+    if extra_boards:
+        print(f"      + {len(extra_boards)} extra boards from supplementary source(s)")
+        boards = boards + list(extra_boards)
+
     print("[2/5] Extracting features...")
     rows = []
     for b in boards:
@@ -115,6 +130,13 @@ def build_dataset(
     print(f"      Feature rows : {len(rows)}")
 
     df = pd.DataFrame(rows)
+
+    # Identity columns can mix types across sources (e.g. LINParser gives an
+    # int board_number, PBNParser gives a composite str) — normalize to str
+    # everywhere so later merges/groupbys on these columns can't silently
+    # miss matches due to a type mismatch (int 5 != str "5").
+    for col in ("_source_file", "_room", "_board_number"):
+        df[col] = df[col].astype(str)
 
     # ------------------------------------------------------------------
     # 2. Cleaning

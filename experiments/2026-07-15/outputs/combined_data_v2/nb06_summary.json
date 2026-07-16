@@ -1,0 +1,39 @@
+{
+  "generated": "2026-07-16T11:20:47.362670",
+  "data_sources": {
+    "lin_files": 606,
+    "pbn_files_total": 212,
+    "pbn_files_new_today": 169,
+    "pbn_source": "computerbridge.se (43 files) + tistis.nl (169 files)",
+    "pbn_boards_total": 10223
+  },
+  "dataset_size": {
+    "total_boards": 21675,
+    "train": 15175,
+    "val": 3251,
+    "test": 3249,
+    "n_features": 182,
+    "n_classes": 36
+  },
+  "bugs_fixed": [
+    "PBN '#' placeholder (carry-forward) not resolved -> wrong identity keys",
+    "round-robin board numbers reused across simultaneous tables -> composite board_id (board|home|visit, fallback to sorted player names)",
+    "empty-string _room became NaN through CSV round-trip -> '.astype(str)' produced literal 'nan' -> broken DDS merge; fixed with keep_default_na=False"
+  ],
+  "results": {
+    "XGBoost acc-tuned (21.675 board)": {
+      "accuracy": 0.5404739919975377,
+      "f1_macro": 0.2937144284168763,
+      "f1_weighted": 0.503864578615242,
+      "top_3_accuracy": 0.7962449984610649,
+      "top_5_accuracy": 0.8731917513080948
+    },
+    "LightGBM class_weight (21.675 board)": {
+      "accuracy": 0.5426285010772546,
+      "f1_macro": 0.3486522246981234,
+      "f1_weighted": 0.518526314100447,
+      "top_3_accuracy": 0.7771622037550016,
+      "top_5_accuracy": 0.866112650046168
+    }
+  }
+}

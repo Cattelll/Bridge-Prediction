@@ -47,6 +47,57 @@ mencapai **52.7% accuracy test set** (naik dari 52.1% baseline 164-fitur)
 — kandidat terbaik proyek sejauh ini. Detail lengkap di
 [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
 
+**Perluasan data — non-BBO PBN + file baru (2026-07-15, lanjutan)**:
+diminta bikin crawler BBO skala besar (>=1 juta board) — ditolak, ToS BBO
+eksplisit melarang scraping/automation software (`news.bridgebase.com/terms`).
+Sebagai gantinya: (1) `data/raw/` bertambah dari 506 → **606 file .lin**
+(100 file baru muncul selama sesi ini, kemungkinan besar export manual
+pribadi dari BBO — legitimate); (2) ditambahkan **1.314 board dari 7 final
+kejuaraan dunia** (Bermuda Bowl, Venice Cup, Vanderbilt, Spingold, dll.)
+via `computerbridge.se`, format PBN, non-komersial — dua sumber PBN lain
+yang muncul di pencarian (`bridgetoernooi.com`, Vugraph Project) ternyata
+sudah mati/di-squat, jangan diulang tanpa verifikasi langsung dulu.
+`src/parser/pbn_parser.py` (`PBNParser`) baru: parser PBN yang hasilnya
+kompatibel dengan `BoardRecord`/`Hand` LIN, dipakai lewat parameter baru
+`extra_boards` di `build_dataset()`. Dataset gabungan di
+`data/processed_combined/` (606 LIN + 43 PBN, 182 fitur, **13.582 board**
+total, group-aware split, tidak mengubah `data/processed/` atau
+`data/processed_dds/`). **Hasil terbaik proyek sejauh ini**: LightGBM +
+`class_weight="balanced"` di data gabungan → **53.6% accuracy, F1 macro
+0.310, F1 weighted 0.506** (naik dari 52.6%/0.307/0.485 di 10.223 board).
+Detail lengkap di
+[experiments/2026-07-15/05_combined_data_source.ipynb](experiments/2026-07-15/05_combined_data_source.ipynb).
+
+**Perluasan PBN lanjutan — tistis.nl + perbaikan 3 bug parser
+(2026-07-16)**: diminta menambah lebih banyak file PBN. Ditemukan
+`tistis.nl/pbn/pbn_databases.htm`, hidup dan berisi bidding manusia
+terverifikasi — 169 file PBN tambahan (ETC97 1997, EYC98 1998, ETC99
+1999, EYC00 2000, IWBC Boston finals, OKB, Papi Garozzo OKbridge games),
+`data/raw_pbn/` naik dari 43 → **212 file** (10.223 board PBN total).
+Sumber yang DITOLAK setelah verifikasi kandungan bot: `bermuda2000.zip`
+(100% GIB vs WBridge5, tanpa manusia), file "Al Howard" (GIB bermain 3
+dari 4 kursi), `FFT_9901.zip` (satu pasangan "Bristol GIB" di antara 16
+pasangan — kontaminasi kecil tapi tidak sepadan untuk 84 board).
+Integrasi mengungkap **3 bug tersembunyi**, semua diperbaiki: (1) PBN
+`"#"` (shorthand "sama seperti board sebelumnya") tidak di-resolve →
+identity key salah untuk tag seperti `HomeTeam`/`VisitTeam`, diperbaiki
+dengan carry-forward dict per file di `PBNParser`; (2) turnamen
+round-robin memakai ulang nomor board 1..32 di tiap match yang main
+simultan, nomor board mentah saja bukan identity key unik → diperbaiki
+dengan composite key `board|home|visit` (fallback ke nama pemain kalau
+tanpa tag tim); (3) kolom `_room` kosong (`""`) berubah jadi `NaN` lewat
+CSV round-trip, lalu `.astype(str)` menghasilkan string `"nan"` (bukan
+`""`) → merusak merge DDS cache, diperbaiki dengan
+`keep_default_na=False` saat load cache. Dataset gabungan dibangun ulang
+penuh (termasuk DDS recompute penuh, tidak reuse cache lama — reuse
+posisional diverifikasi TIDAK valid setelah bug fix): **21.675 board**
+(naik dari 13.582, +60%), 36 kelas (naik dari 35 — `5N` akhirnya cukup
+sampel), 182 fitur. **Hasil terbaik proyek — baru lagi**: LightGBM +
+`class_weight="balanced"` → **54.3% accuracy, F1 macro 0.349, F1
+weighted 0.519** (naik dari 53.6%/0.310/0.506 di 13.582 board), sekarang
+unggul XGBoost di SEMUA metrik. Detail lengkap di
+[experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb](experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb).
+
 ---
 
 ## Batas Ruang Lingkup
