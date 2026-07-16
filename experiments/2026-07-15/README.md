@@ -17,6 +17,7 @@ DART, resampling) justru menukar accuracy demi F1 macro.
 | 5 | [05_combined_data_source.ipynb](05_combined_data_source.ipynb) | Perluasan data non-BBO (PBN, 1.314 board dari 7 final kejuaraan dunia) + 100 file LIN baru — **hasil terbaik proyek**: LightGBM+class_weight 53.6% acc, F1 macro 0.310 | done |
 | 6 | [06_combined_data_v2_more_pbn.ipynb](06_combined_data_v2_more_pbn.ipynb) | Perluasan PBN lanjutan (tistis.nl, 169 file baru) + perbaikan 3 bug parser/merge — **hasil terbaik proyek (baru)**: LightGBM+class_weight 54.3% acc, F1 macro 0.349, di 21.675 board | done |
 | 7 | [07_angelfire_expansion.ipynb](07_angelfire_expansion.ipynb) | Perluasan besar (angelfire.com via Wayback Machine, 1.178 file baru) + fix segfault DDS solver — **hasil terbaik proyek (lompatan terbesar)**: LightGBM+class_weight 56.4% acc, F1 macro 0.410, di 49.755 board | done |
+| 8 | [08_baseline_dds_default.ipynb](08_baseline_dds_default.ipynb) | Baseline hyperparameter DEFAULT (tanpa tuning) di 182 fitur + 49.755 board — mengisolasi kontribusi data+DDS murni dari kontribusi tuning. **Temuan penting**: XGBoost default (57.4% acc) kini justru MENGALAHKAN XGBoost acc-tuned (56.1%) — hyperparameter tuning lama (dari dataset 10.223 board) tidak lagi optimal di dataset 49.755 board | done |
 
 ## Catatan penting: permintaan crawler BBO ditolak
 
@@ -325,3 +326,52 @@ kemungkinan besar adalah kumpulan PBN non-BBO legitimate terbesar yang
 tersisa dari era pra-2010. Sumber serupa mulai langka — perluasan lebih
 lanjut mungkin perlu jenis sumber lain, bukan sekadar PBN archive
 tambahan.
+
+### 08 — Baseline hyperparameter default di 182 fitur + 49.755 board — TEMUAN: tuning lama sudah kadaluarsa
+
+Semua angka terbaik sejauh ini (XGBoost acc-tuned, LightGBM class_weight)
+memakai hyperparameter yang di-tuning kembali di eksperimen 2026-07-09/15,
+saat itu di atas dataset yang jauh lebih kecil (10.223 board). Notebook
+ini membangun titik pembanding "sebelum tuning apa pun" — `RFModel()`,
+`XGBModel()`, `LGBMModel()` dipanggil TANPA argumen tambahan (murni
+hyperparameter default `configs/config.yaml`), dijalankan mandiri dari
+tahap ekstraksi data (parse LIN+PBN dari nol, reuse cache DDS yang sudah
+ada) sampai evaluasi test set, di atas dataset 49.755 board yang sama.
+
+| Model | Accuracy | F1 Macro | F1 Weighted |
+|---|---|---|---|
+| Random Forest (default) | 46.8% | 0.325 | 0.485 |
+| **XGBoost (default, TANPA tuning)** | **57.4%** | **0.390** | **0.554** |
+| XGBoost acc-tuned (REF, dari nb07) | 56.1% | 0.342 | 0.532 |
+| LightGBM (default, TANPA class_weight) | 56.3% | 0.364 | 0.539 |
+| LightGBM class_weight (REF, dari nb07) | 56.4% | 0.410 | 0.557 |
+
+**Temuan penting — hyperparameter tuning lama sudah tidak optimal**:
+XGBoost DEFAULT (57.4% acc, 0.390 F1 macro) sekarang justru MENGALAHKAN
+XGBoost "acc-tuned" (56.1% acc, 0.342 F1 macro) di SEMUA metrik.
+Hyperparameter acc-tuned (`max_depth=5, subsample=0.9,
+colsample_bytree=0.6, min_child_weight=5, reg_lambda=2.0`) dicari lewat
+`RandomizedSearchCV` di atas dataset 10.223 board (2026-07-15,
+`03_accuracy_push_with_dds.ipynb`) — kombinasi regularisasi ketat itu
+masuk akal untuk dataset kecil (mencegah overfitting), tapi di dataset
+49.755 board (~5x lebih besar) regularisasi seketat itu sekarang
+JUSTRU MEMBATASI kapasitas model yang seharusnya bisa dipakai. Ini
+pelajaran umum yang berlaku luas: **hyperparameter yang dituning di satu
+ukuran dataset tidak otomatis optimal setelah dataset berubah drastis**
+— retuning ulang seharusnya jadi langkah berikutnya, bukan terus memakai
+konfigurasi lama.
+
+Untuk LightGBM, gap-nya jauh lebih kecil (56.3% vs 56.4% acc) tapi F1
+macro tetap timpang jauh (0.364 vs 0.410) — mengonfirmasi
+`class_weight="balanced"` sendiri (bukan hyperparameter lain) yang
+memberi nilai nyata untuk kelas langka, terlepas dari ukuran dataset.
+
+**Rekomendasi konkret**: XGBoost perlu di-tuning ULANG di atas dataset
+49.755 board (hyperparameter lama sudah kadaluarsa) sebelum diklaim
+sebagai kandidat kompetitif — kandidat utama proyek untuk saat ini
+tetap **LightGBM + `class_weight="balanced"`** karena keunggulan F1
+macronya konsisten di berbagai ukuran dataset, tapi XGBoost default
+yang TIDAK dituning kini sudah lebih baik dari versi acc-tuned-nya,
+jadi perbandingan "XGBoost vs LightGBM" saat ini agak tidak adil
+(salah satu di-tuning ulang, satu tidak). Detail lengkap di kesimpulan
+[08_baseline_dds_default.ipynb](08_baseline_dds_default.ipynb).

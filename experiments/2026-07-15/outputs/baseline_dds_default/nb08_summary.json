@@ -1,0 +1,50 @@
+{
+  "generated": "2026-07-17T01:03:26.575439",
+  "purpose": "untuned baseline (config.yaml defaults) on the 49,755-board / 182-feature combined dataset",
+  "dataset_size": {
+    "total_boards": 49755,
+    "train": 34832,
+    "val": 7462,
+    "test": 7461,
+    "n_features": 182,
+    "n_classes": 36
+  },
+  "results": {
+    "RandomForest": {
+      "accuracy": 0.4684358665058303,
+      "f1_macro": 0.32507304544199334,
+      "f1_weighted": 0.4853627426383334,
+      "top_3_accuracy": 0.7714783541080285,
+      "top_5_accuracy": 0.8737434660233213,
+      "fit_seconds": 12.8
+    },
+    "XGBoost": {
+      "accuracy": 0.5744538265648036,
+      "f1_macro": 0.39010697269128886,
+      "f1_weighted": 0.5540023622833717,
+      "top_3_accuracy": 0.8262967430639324,
+      "top_5_accuracy": 0.9047044632086851,
+      "fit_seconds": 223.4
+    },
+    "LightGBM": {
+      "accuracy": 0.5633293124246079,
+      "f1_macro": 0.36355211906900753,
+      "f1_weighted": 0.5392090632734822,
+      "top_3_accuracy": 0.8134298351427423,
+      "top_5_accuracy": 0.886878434526203,
+      "fit_seconds": 181.1
+    }
+  },
+  "tuned_reference": {
+    "XGBoost acc-tuned (REF, tuned)": {
+      "accuracy": 0.5611,
+      "f1_macro": 0.3416,
+      "f1_weighted": 0.5322
+    },
+    "LightGBM class_weight (REF, tuned)": {
+      "accuracy": 0.5639,
+      "f1_macro": 0.4101,
+      "f1_weighted": 0.5567
+    }
+  }
+}
