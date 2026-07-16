@@ -98,6 +98,22 @@ weighted 0.519** (naik dari 53.6%/0.310/0.506 di 13.582 board), sekarang
 unggul XGBoost di SEMUA metrik. Detail lengkap di
 [experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb](experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb).
 
+**Promosi data gabungan ke pipeline resmi `notebooks_dds/` (2026-07-16,
+lanjutan)**: diminta mengganti data di notebook DDS dengan data baru.
+`notebooks_dds/01_data_extraction.ipynb` sekarang mem-parse `data/raw/`
+(606 LIN) + `data/raw_pbn/` (212 PBN) sekaligus (`PBNParser` + parameter
+`extra_boards`), sehingga `data/processed_dds/` **tidak lagi** LIN-only
+10.223 board — sekarang berisi data gabungan yang sama seperti
+`data/processed_combined/` (**21.675 board, 36 kelas, 182 fitur**).
+`notebooks_dds/03_modeling.ipynb` diupdate: LightGBM sekarang eksplisit
+pakai `class_weight="balanced"` (sebelumnya default). Notebook 01→04
+dieksekusi ulang penuh. **Hasil resmi pipeline `notebooks_dds/` (test
+set)**: LightGBM 54.3% accuracy / F1 macro 0.349 / F1 weighted 0.519 —
+unggul XGBoost (54.0%/0.294/0.504) di SEMUA metrik, angkanya identik
+dengan hasil eksperimen di atas (memverifikasi pipeline resmi dan
+eksperimen konsisten). `data/processed/` (164-fitur kanonik, notebooks/
+biasa) **tidak diubah** — tetap terpisah sesuai desain awal.
+
 ---
 
 ## Batas Ruang Lingkup

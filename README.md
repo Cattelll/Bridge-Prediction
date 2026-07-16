@@ -36,22 +36,29 @@ di ketiga model, split **group-aware** — lihat catatan metodologi di bawah)*
 > defensible. Detail investigasi & angka before/after di
 > [experiments/2026-07-09/README.md](experiments/2026-07-09/README.md).
 
-## Hasil (opsional): + Double-Dummy Solver
+## Hasil (opsional): + Double-Dummy Solver + data gabungan (pipeline `notebooks_dds/`)
 
 Fitur Double-Dummy Solver (DDS) — di luar 164 fitur kanonik, disetujui
 masuk sebagai **fitur tambahan opsional** 2026-07-15 (lihat `CLAUDE.md`)
 setelah ditemukan bahwa akurasi sudah mendekati batas konsistensi
 bidding manusia sendiri (lihat [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md)).
 Pipeline paralel lengkap di [`notebooks_dds/`](notebooks_dds/) & `data/processed_dds/`
-(182 fitur = 164 kanonik + 18 DDS), tidak menggantikan pipeline utama di atas:
+(182 fitur = 164 kanonik + 18 DDS), tidak menggantikan pipeline utama di atas.
 
-| Model | Accuracy | F1 Weighted |
-|-------|----------|-------------|
-| Random Forest | 46.3% (+1.4pp) | 0.472 (+0.7pp) |
-| XGBoost (hyperparameter di-tune untuk 182 fitur) | 52.7% (+0.6pp) | 0.480 |
-| LightGBM | 51.8% (+0.1pp) | 0.467 |
+**2026-07-16**: pipeline ini diperbarui untuk memakai data gabungan LIN+PBN
+(606 file .lin + 212 file .pbn, **21.675 board, 36 kelas**) dan LightGBM
+sekarang eksplisit pakai `class_weight="balanced"` — hasil test set terbaru
+(notebook 01→04 dieksekusi penuh):
 
-Perbandingan terhadap baseline 164-fitur di tabel utama.
+| Model | Accuracy | F1 Macro | F1 Weighted |
+|-------|----------|----------|-------------|
+| Random Forest | 44.8% | 0.312 | 0.463 |
+| XGBoost (hyperparameter di-tune untuk 182 fitur) | 54.0% | 0.294 | 0.504 |
+| **LightGBM (class_weight="balanced")** | **54.3%** | **0.349** | **0.519** |
+
+LightGBM unggul di SEMUA metrik dan merupakan model yang direkomendasikan
+untuk pipeline `notebooks_dds/`. Perbandingan terhadap baseline 164-fitur
+di tabel utama.
 
 ## Hasil (opsional): + data tambahan (non-BBO PBN + file baru)
 

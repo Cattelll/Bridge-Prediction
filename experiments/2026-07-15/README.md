@@ -191,11 +191,8 @@ Game/Slam) sudah 75-78%, top-3/top-5 exact-contract sudah 78.4%/86.9%
 **Rekomendasi konkret**: **LightGBM+class_weight di `data/processed_combined/`**
 (606 LIN + 43 PBN, 182 fitur) adalah kandidat model utama baru yang
 direkomendasikan — accuracy dan F1 macro/weighted terbaik sekaligus.
-Belum dipromosikan ke pipeline notebook resmi (`notebooks_dds/` masih
-pakai XGBoost acc-tuned di 10.223 board) — perlu keputusan apakah mau
-menjadikan dataset gabungan ini standar baru, mengingat komposisinya kini
-campuran BBO casual play + final kejuaraan dunia (distribusi berbeda,
-perlu didiskusikan apakah itu diinginkan untuk skripsi).
+(Update 2026-07-16: promosi ke pipeline resmi selesai — lihat penutup
+di bawah, setelah section 06.)
 
 ### 06 — Perluasan PBN lanjutan (tistis.nl) + 3 bug fix — HASIL TERBAIK PROYEK (lagi)
 
@@ -241,3 +238,32 @@ accuracy). Dataset 60% lebih besar (21.675 board, 36 kelas — `5N`
 akhirnya cukup sampel) terbukti membantu terutama kelas langka. Detail
 lengkap di kesimpulan
 [06_combined_data_v2_more_pbn.ipynb](06_combined_data_v2_more_pbn.ipynb).
+
+## Update 2026-07-16: promosi data gabungan ke pipeline resmi `notebooks_dds/`
+
+Diminta mengganti data di notebook DDS dengan data baru. Sebelumnya
+`notebooks_dds/` (pipeline resmi 182-fitur) masih memakai 10.223 board
+LIN-only, sementara data gabungan (LIN+PBN) hanya hidup di eksperimen
+(`data/processed_combined/`, notebook 05/06 di atas). Perbedaan itu
+sekarang dihilangkan:
+
+- `notebooks_dds/01_data_extraction.ipynb`: mem-parse `data/raw/` (606 LIN)
+  + `data/raw_pbn/` (212 PBN) sekaligus, `build_dataset(extra_boards=...)`.
+  `data/processed_dds/` sekarang identik isinya dengan
+  `data/processed_combined/` (21.675 board, 36 kelas, 182 fitur).
+- `notebooks_dds/03_modeling.ipynb`: `LGBMModel` sekarang eksplisit pakai
+  `class_weight="balanced"` (sebelumnya default, tidak seimbang kelas).
+- Notebook 01→04 dieksekusi ulang penuh (bukan hanya notebook eksperimen).
+
+**Hasil resmi test set (`outputs/results_dds/nb04_summary.json`)**:
+
+| Model | Accuracy | F1 Macro | F1 Weighted |
+|---|---|---|---|
+| Random Forest | 44.8% | 0.312 | 0.463 |
+| XGBoost acc-tuned | 54.0% | 0.294 | 0.504 |
+| **LightGBM class_weight** | **54.3%** | **0.349** | **0.519** |
+
+Angka ini identik dengan hasil notebook eksperimen 06 di atas — memverifikasi
+bahwa pipeline resmi dan eksperimen konsisten. `data/processed/` (164-fitur
+kanonik, `notebooks/` biasa) **tidak diubah**, tetap terpisah sesuai desain
+awal DDS sebagai fitur tambahan opsional.
