@@ -19,11 +19,18 @@ features:
   stoppers: true
   auction_features: true
 
+# Source of truth for the official pipeline (notebooks/03_modeling.ipynb reads
+# this file directly). RF + LightGBM use class_weight="balanced" to counter the
+# extreme long-tail imbalance in target_base; XGBoost has no native class_weight
+# so it runs unweighted here (see notebooks/05 Exp B/F for the sample_weight
+# study). These XGBoost values were re-confirmed as the best config at the
+# 49,755-board / 182-feature scale (notebooks/05 Exp A, experiments/2026-07-15/08).
 models:
   random_forest:
     n_estimators: 300
     max_depth: null
     min_samples_split: 5
+    class_weight: balanced
     random_state: 42
     n_jobs: -1
 
@@ -43,6 +50,7 @@ models:
     num_leaves: 63
     subsample: 0.8
     colsample_bytree: 0.8
+    class_weight: balanced
     random_state: 42
     n_jobs: -1
 

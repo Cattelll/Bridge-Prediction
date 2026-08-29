@@ -17,12 +17,14 @@ from src.parser.lin_parser import BoardRecord
 SEATS_ORDER = ["N", "E", "S", "W"]
 STRAINS = ["S", "H", "D", "C", "N"]
 
+# Order MUST match the column order produced by compute_dds_features() +
+# expand_par_denom() (ns/ew interleaved per strain, then par scalars, then the
+# one-hot par denom) — this is the order that lands in
+# data/processed/feature_columns.json. Do not "tidy" it into ns-block / ew-block.
 DDS_FEATURE_COLUMNS: list[str] = (
-    [f"ns_dd_{s}" for s in STRAINS]
-    + [f"ew_dd_{s}" for s in STRAINS]
-    + ["dd_par_level"]
+    [col for s in STRAINS for col in (f"ns_dd_{s}", f"ew_dd_{s}")]
+    + ["dd_par_level", "dd_par_declarer_is_ns", "dd_par_score"]
     + [f"dd_par_denom_{s}" for s in STRAINS]
-    + ["dd_par_declarer_is_ns", "dd_par_score"]
 )
 
 

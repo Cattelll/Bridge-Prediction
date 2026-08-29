@@ -5,19 +5,23 @@ Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
 (Random Forest, XGBoost, LightGBM) untuk memprediksi kontrak optimal
 Contract Bridge dari rekaman BBO LIN format.
 
-## Status Proyek (Juli 2026)
+## Status Proyek (Juli–Agustus 2026)
 Parser, feature engineering, training, dan evaluasi sudah diimplementasi.
-`notebooks/01-04` (lihat "Konsolidasi" di bawah, 2026-07-17) adalah
-pipeline resmi saat ini: 606 file `.lin` + 1.390 file `.pbn` gabungan,
-182 fitur (164 kanonik + 18 DDS), **49.755 board**, dieksekusi penuh
-01→04 dengan `data/processed/`, `outputs/models/*.pkl`,
-`outputs/results/*` (termasuk `nb04_summary.json` yang dipakai
-`scripts/report.py`) semuanya konsisten dan sinkron dengan hasil ini.
+`notebooks/01-06` adalah pipeline resmi saat ini: 606 file `.lin` + 1.390
+file `.pbn` gabungan, 182 fitur (164 kanonik + 18 DDS), **49.755 board**,
+**dieksekusi ulang penuh 01→06 pada 2026-08-27** (kernel `bridge-venv`) —
+semua notebook lolos "Restart & Run All" berurutan tanpa error;
+`data/processed/`, `outputs/models/*.pkl`, `outputs/results/*` (termasuk
+`nb04_summary.json` yang dipakai `scripts/report.py`) semuanya konsisten
+dan sinkron. **Perubahan besar 2026-08-27**: XGBoost baseline resmi
+dipromosikan ke default `configs/config.yaml` (57.5% acc / 0.390 F1 macro,
+naik dari 56.1%/0.342); nb05 & nb06 diperbaiki sehingga kembali
+reproducible. Detail: "Audit menyeluruh notebooks/01–06" di bawah.
 **Catatan**: `scripts/run_pipeline.py` **belum diupdate** dan masih
 membangun pipeline 164-fitur/LIN-only yang lama — lihat peringatan di
 bawah, jangan dijalankan tanpa diupdate dulu. `docs/SUMMARY.md` juga
 masih mendeskripsikan pipeline lama (10.223 board/164 fitur) — belum
-disinkronkan ke hasil konsolidasi ini.
+disinkronkan.
 
 **Perbaikan metodologi split (2026-07-09, sore)**: ditemukan kebocoran
 data — BBO vugraph mencatat tiap papan dua kali (open/closed room, kartu
@@ -254,10 +258,10 @@ macro, lihat cell "Simpan Model Kandidat"). Namun **XGBoost "default"
 config.yaml layak dipromosikan** menggantikan hyperparameter "acc-tuned"
 lama di `notebooks/03_modeling.ipynb` — perbaikan nyata & tervalidasi
 test set (+1.4pp accuracy, +4.8pp F1 macro) tanpa trade-off, konsisten
-dengan temuan nb08. Promosi ini **belum dilakukan** (keputusan terpisah,
-menunggu konfirmasi) — lihat `notebooks/05_improvement_experiments.ipynb`
-untuk detail lengkap dan `outputs/results/nb05_summary.json`/
-`nb05_test_comparison.csv` untuk angka mentah.
+dengan temuan nb08. Promosi ini **SUDAH dilakukan pada 2026-08-27** — lihat
+"Audit menyeluruh notebooks/01–06" di bawah. Detail eksperimen ada di
+`notebooks/05_improvement_experiments.ipynb` + `outputs/results/nb05_summary.json`/
+`nb05_test_comparison.csv`.
 
 **Perluasan notebook 5 (Eksperimen E-H) + notebook 6 evaluasi final
 komprehensif (2026-07-21)**: `notebooks/05_improvement_experiments.ipynb`
@@ -298,10 +302,16 @@ Metode baru di notebook 5:
 | Ensemble G (bobot dicari) | 57.3% | 0.397 | 0.556 |
 | LightGBM (Exp C: retuned) | 55.6% | 0.394 | 0.544 |
 | RandomForest (Exp E: retuned) | 48.9% | 0.390 | 0.507 |
-| XGBoost (Exp A: retuned) | 57.4% | 0.390 | 0.554 |
+| XGBoost (Exp A: retuned) | 57.5% | 0.390 | 0.554 |
+| XGBoost (baseline resmi) | 57.5% | 0.390 | 0.554 |
 | **Stacking H** | **58.2%** | 0.384 | 0.559 |
-| XGBoost (baseline resmi, acc-tuned lama) | 56.1% | 0.342 | 0.532 |
 | RandomForest (baseline resmi) | 46.8% | 0.325 | 0.485 |
+
+> Tabel di atas: angka **setelah** promosi XGBoost default config.yaml
+> (2026-08-27, lihat "Audit menyeluruh" di bawah). Baris "XGBoost (baseline
+> resmi)" dulu 56.1%/0.342/0.532 ("acc-tuned lama") — sekarang identik dengan
+> Exp A karena keduanya memakai default config.yaml. Sisa tabel tidak berubah
+> (deterministik, model & data sama).
 
 **Kesimpulan akhir**: **LightGBM (baseline resmi, tidak berubah) tetap
 model utama proyek** — F1 macro tertinggi (prioritas utama karena class
@@ -314,9 +324,11 @@ DAN top-3/top-5 accuracy (tertinggi dari semua kandidat) — kandidat
 resmi jika prioritas penelitian condong ke accuracy/F1-weighted, bukan
 murni F1 macro. Stacking H direkomendasikan HANYA jika accuracy mentah
 adalah satu-satunya prioritas (mengorbankan kelas langka paling banyak
-dari semua kandidat). Belum ada perubahan pada `outputs/models/{xgboost,lightgbm,randomforest}.pkl`
-resmi — semua ini tetap rekomendasi, bukan promosi otomatis. Detail
-lengkap, seluruh grafik (confusion matrix, feature importance, SHAP,
+dari semua kandidat). **Update 2026-08-27**: `outputs/models/xgboost.pkl`
+resmi kini memakai default config.yaml (promosi dari "acc-tuned" — lihat
+"Audit menyeluruh" di bawah); `lightgbm.pkl` & `randomforest.pkl` tidak
+berubah. Exp F / Stacking H tetap rekomendasi (alternatif), bukan promosi.
+Detail lengkap, seluruh grafik (confusion matrix, feature importance, SHAP,
 radar chart), dan tabel mentah ada di
 `notebooks/06_final_evaluation.ipynb` dan
 `outputs/results/nb06_final_comparison.csv`/`nb06_summary.json`.
@@ -334,7 +346,15 @@ radar chart), dan tabel mentah ada di
 > `df.iloc[0]['model']` gagal, harus pakai `df.index[0]`. Perhatikan pola
 > ini di notebook mana pun yang memakai `compare_models()`.
 
-**Pembersihan model kandidat notebook 5 (2026-07-21, lanjutan)**: setelah
+**Pembersihan model kandidat notebook 5 (2026-07-21, lanjutan)** —
+⚠️ **DIBATALKAN 2026-08-27** (lihat "Audit menyeluruh notebooks/01–06" di
+bawah): pemangkasan ini membuat `notebooks/06_final_evaluation.ipynb` tidak
+bisa dijalankan ulang. Sekarang nb05 Bagian 11 menyimpan **semua** kandidat
+lagi, pakai `joblib compress=3` sehingga `randomforest_expE_retuned.pkl`
+turun dari 1,29GB → ~123MB; nb06 **tidak lagi frozen**. Paragraf di bawah
+dipertahankan sebagai riwayat.
+
+Isi keputusan lama (2026-07-21): setelah
 `notebooks/06_final_evaluation.ipynb` selesai dan hasilnya terekam
 permanen di atas, 8 model kandidat yang tadinya disimpan tanpa syarat
 dipangkas jadi **2 saja** untuk reklaim disk (~1,4GB, didominasi
@@ -357,6 +377,81 @@ model akan gagal `FileNotFoundError` untuk 4 file yang sudah dihapus).
 `notebooks/05_improvement_experiments.ipynb` Bagian 12 sudah diupdate
 mengikuti perilaku baru ini (hanya menyimpan 2 model), sehingga eksekusi
 ulang notebook 5 di masa depan konsisten dengan keadaan disk saat ini.
+
+**Audit menyeluruh notebooks/01–06 + perbaikan (2026-08-27)**: audit lengkap
+6 notebook resmi menemukan beberapa masalah; semua diperbaiki dan notebook
+**01→06 dieksekusi ulang penuh** (kernel `bridge-venv` = `.venv`), semua
+lolos "Restart & Run All" dengan execution count berurutan tanpa error.
+
+1. **XGBoost "acc-tuned" DIPROMOSIKAN ke default `config.yaml`**
+   (keputusan yang sebelumnya "menunggu konfirmasi"). `notebooks/03_modeling.ipynb`
+   kini memuat SEMUA hyperparameter dari `configs/config.yaml` via
+   `yaml.safe_load` — tidak ada angka di-hardcode di notebook (sesuai
+   "Konvensi Kode"). `configs/config.yaml` diupdate: `class_weight: balanced`
+   ditambahkan eksplisit ke blok `random_forest` + `lightgbm` (sebelumnya
+   hanya default di wrapper `src/models/`). **Hasil test set XGBoost:
+   56.1%/0.342/0.532 → 57.5%/0.390/0.554** (naik di accuracy, F1 macro,
+   F1 weighted, top-3, top-5 — tanpa trade-off). RF & LightGBM **tidak
+   berubah**. LightGBM tetap model utama (F1 macro 0.410 tertinggi).
+
+2. **`notebooks/05_improvement_experiments.ipynb` diperbaiki**: notebook
+   sebelumnya **crash** pada "Restart & Run All" — `NameError: best_xgb_proba`
+   (Eksperimen G) dan `NameError: best_xgb_key` (Bagian 10), dua nama yang
+   tak pernah didefinisikan; execution count tidak berurutan; output
+   tersimpan + `nb05_summary.json` + `nb05_test_comparison.csv` berasal dari
+   3 versi kode berbeda (termasuk versi `RandomizedSearchCV` lama yang
+   melaporkan "Ensemble F1 macro 0.411 = terbaik", kontradiksi dengan
+   seluruh narasi proyek). Perbaikan: variabel undefined → `y_proba_a` /
+   `xgb_a`; **Eksperimen D (soft-voting 50/50) ditambahkan kembali** ke kode
+   (sebelumnya dirujuk nb06 tapi hilang dari sel nb05); Bagian 11 menyimpan
+   SEMUA 6 model kandidat + `ensemble_manifest.json` + `stacking_manifest.json`
+   (joblib `compress=3`).
+
+3. **`notebooks/06_final_evaluation.ipynb` TIDAK LAGI frozen**: pemangkasan
+   model 2026-07-21 membuatnya gagal `FileNotFoundError` di sel ke-3. Karena
+   nb05 kini menyimpan semua kandidat lagi (RF Exp E turun 1,29GB → ~123MB
+   berkat joblib compress), nb06 kembali bisa dijalankan ulang normal. Load
+   model diganti ke `joblib.load` (baca pickle biasa maupun joblib compress).
+   `stacking_expH_meta_logreg.pkl` tidak lagi "beku".
+
+4. **`notebooks/04_evaluation.ipynb`**: blok "PERBANDINGAN 164 vs 182 fitur"
+   dihapus — blok itu membaca `test_comparison.csv` yang **baru saja ditulis
+   notebook itu sendiri**, jadi selalu membandingkan hasil dengan dirinya
+   sendiri (output harfiah "+0.00pp" untuk semua). Ablasi DDS yang
+   sebenarnya ada di `experiments/2026-07-15/`.
+
+5. **`src/features/dds.py`**: konstanta `DDS_FEATURE_COLUMNS` diperbaiki
+   urutannya — dulu blok ns lalu blok ew; sebenarnya selang-seling
+   (`ns_dd_S, ew_dd_S, ns_dd_H, …`) seperti yang diproduksi
+   `compute_dds_features` dan tersimpan di `data/processed/feature_columns.json`.
+   Konstanta hanya dokumentatif (tidak dipakai untuk indexing) tapi
+   menyesatkan.
+
+6. **`notebooks/01_data_extraction.ipynb`**: judul plot "Statistik Dataset"
+   diperbaiki (dulu "606 File LIN dari BBO", padahal plot menghitung 61.420
+   board LIN+PBN **pra-deduplikasi**); "Top-3 kontrak" di ringkasan sekarang
+   dari dataset final (dedup) supaya konsisten dengan sel jumlah-per-kelas.
+   NB02 provenance heuristik dicek — **sudah benar** (semua file tistis
+   berawalan `tistis_`), tidak diubah.
+
+7. **Bersih-bersih**: 19 file output basi dihapus dari `outputs/`
+   (`val_comparison.csv` + `*_test.json` tanpa prefix dari run 2026-07-09;
+   PNG pra-konsolidasi; model yatim `lightgbm_retuned.pkl` +
+   `nb05_xgboost_acc_test.json` dkk. dari run nb05 lama 2026-07-22).
+
+**Hasil test set resmi baru** (`notebooks/04`, konsolidasi + promosi XGBoost):
+
+| Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
+|-------|----------|-------|-------|----------|-------------|
+| RandomForest | 46.8% | 77.1% | 87.4% | 0.325 | 0.485 |
+| **XGBoost** | **57.5%** | **82.6%** | **90.5%** | 0.390 | 0.554 |
+| **LightGBM** | 56.4% | 82.1% | 89.7% | **0.410** | **0.557** |
+
+XGBoost (default config.yaml) kini unggul accuracy/top-3/top-5; LightGBM
+(`class_weight="balanced"`) tetap unggul F1 macro + F1 weighted dan **tetap
+model utama proyek** (prioritas F1 macro karena class imbalance ekstrem).
+`notebooks_dds/` tidak diubah (arsip historis, kini beda dari `notebooks/`
+karena promosi XGBoost).
 
 ---
 
@@ -427,15 +522,17 @@ src/
   evaluation/
     metrics.py             evaluate(), compare_models(), save_results()
 
-notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17, lihat "Status Proyek")
+notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; re-run penuh 2026-08-27)
   01_data_extraction.ipynb    Parsing LIN+PBN + DDS → dataset CSV (data/processed/), 182 fitur
   02_eda_features.ipynb       EDA & dokumentasi 182 fitur
-  03_modeling.ipynb           Training RF/XGBoost/LightGBM + learning curve
+  03_modeling.ipynb           Training RF/XGBoost/LightGBM (hyperparameter dari configs/config.yaml)
   04_evaluation.ipynb         Evaluasi final, SHAP, radar
-  05_improvement_experiments.ipynb  Eksperimen peningkatan baseline (retuning, ensemble)
+  05_improvement_experiments.ipynb  Eksperimen A–H (retuning, weighting, ensemble, stacking)
+  06_final_evaluation.ipynb   Laporan komprehensif 11 kandidat (baseline + Eksperimen A–H)
 
 notebooks_dds/                 ARSIP historis — identik dengan notebooks/ sebelum
-                               konsolidasi 2026-07-17, tidak dieksekusi ulang lagi
+                               konsolidasi 2026-07-17. TIDAK dieksekusi ulang; kini
+                               berbeda dari notebooks/ (belum punya promosi XGBoost 2026-08-27)
 
 scripts/
   run_pipeline.py             Pipeline lengkap: parse → train → eval — BELUM diupdate
@@ -507,25 +604,28 @@ Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 
 ## Hasil Final
 
-*(test set, `notebooks/04_evaluation.ipynb`, konsolidasi 2026-07-17 — 606 file
-`.lin` + 1.390 file `.pbn` / **49.755 papan** / **182 fitur** (164 kanonik +
-18 DDS) / 36 kelas, split **group-aware**. Superseded angka 164-fitur/
-10.223-papan sebelumnya — lihat "Status Proyek" & "Konsolidasi `notebooks/`"
-di atas)*
+*(test set, `notebooks/04_evaluation.ipynb`, konsolidasi 2026-07-17 +
+promosi XGBoost 2026-08-27 — 606 file `.lin` + 1.390 file `.pbn` /
+**49.755 papan** / **182 fitur** (164 kanonik + 18 DDS) / 36 kelas, split
+**group-aware**. Superseded angka 164-fitur/10.223-papan sebelumnya — lihat
+"Status Proyek" di atas)*
 
 | Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
 |-------|----------|-------|-------|----------|-------------|
 | RandomForest | 46.8% | 77.1% | 87.4% | 0.325 | 0.485 |
-| XGBoost | 56.1% | 81.7% | 89.8% | 0.342 | 0.532 |
-| **LightGBM** | **56.4%** | **82.1%** | 89.7% | **0.410** | **0.557** |
+| **XGBoost** | **57.5%** | **82.6%** | **90.5%** | 0.390 | 0.554 |
+| **LightGBM** | 56.4% | 82.1% | 89.7% | **0.410** | **0.557** |
 
-LightGBM (`class_weight="balanced"`) unggul di accuracy/F1 macro/F1 weighted;
-XGBoost sedikit di bawah di semua metrik kecuali top-5. Sumber:
-`outputs/results/test_comparison.csv`. Riwayat lengkap kenaikan bertahap
-(52.1% → 56.4%, lewat penambahan DDS + data non-BBO PBN + `class_weight`) ada
-di "Status Proyek" di atas dan `experiments/2026-07-15/README.md`. Percobaan
-lanjutan untuk melampaui baseline ini (retuning di skala 49.755-board) ada di
-`notebooks/05_improvement_experiments.ipynb`.
+LightGBM (`class_weight="balanced"`) unggul di F1 macro/F1 weighted dan
+**tetap model utama proyek** (prioritas F1 macro karena class imbalance
+ekstrem); XGBoost (default `configs/config.yaml`, dipromosikan 2026-08-27
+menggantikan hyperparameter "acc-tuned" usang) unggul di accuracy/top-3/top-5.
+Sumber: `outputs/results/test_comparison.csv`. Riwayat lengkap kenaikan
+bertahap (52.1% → 56.4% F1w, lewat penambahan DDS + data non-BBO PBN +
+`class_weight`) ada di "Status Proyek" di atas dan
+`experiments/2026-07-15/README.md`. Perbandingan 11 kandidat (retuning,
+ensemble, stacking) di skala 49.755-board ada di
+`notebooks/05_improvement_experiments.ipynb` + `06_final_evaluation.ipynb`.
 
 ---
 
@@ -534,8 +634,13 @@ lanjutan untuk melampaui baseline ini (retuning di skala 49.755-board) ada di
 - Semua fitur yang masuk ke model harus numerik/biner — tidak ada kolom string
 - Daftar kolom fitur tersimpan di `data/processed/feature_columns.json`;
   gunakan `load_splits()` agar konsisten
-- Hyperparameter ada di `configs/config.yaml` — tidak boleh hardcode di notebook
-- Model disimpan ke `outputs/models/` dalam format `.pkl`
+- Hyperparameter ada di `configs/config.yaml` — tidak boleh hardcode di
+  notebook. `notebooks/03_modeling.ipynb` memuatnya via `yaml.safe_load`
+  (`CONFIG`); `configs/config.yaml` menyertakan `class_weight: balanced`
+  untuk `random_forest` + `lightgbm`. `notebooks/05` memakai grid manual
+  eksplisit (eksperimen tuning — dikecualikan dari aturan ini).
+- Model disimpan ke `outputs/models/` dalam format `.pkl` (`joblib` untuk
+  kandidat besar nb05; `joblib.load` membaca keduanya)
 - Hasil evaluasi disimpan ke `outputs/results/` dalam format `.json` dan `.png`
 
 ---
