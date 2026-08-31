@@ -264,7 +264,14 @@ dengan temuan nb08. Promosi ini **SUDAH dilakukan pada 2026-08-27** — lihat
 `nb05_test_comparison.csv`.
 
 **Perluasan notebook 5 (Eksperimen E-H) + notebook 6 evaluasi final
-komprehensif (2026-07-21)**: `notebooks/05_improvement_experiments.ipynb`
+komprehensif (2026-07-21)** — ⚠️ **Eksperimen D, G, H (ensemble + stacking)
+DIHAPUS 2026-08-31** (lihat "Audit menyeluruh" di bawah): di luar ruang
+lingkup penelitian (RF vs XGBoost vs LightGBM sebagai model tunggal).
+`notebooks/05` sekarang hanya Eksperimen **A, B, C, E, F**; `notebooks/06`
+mengevaluasi **8 kandidat** (3 baseline + 5 retuning). Paragraf di bawah
+dipertahankan sebagai riwayat.
+
+Isi lama (2026-07-21): `notebooks/05_improvement_experiments.ipynb`
 ditambah 4 metode baru untuk perbandingan, dan `notebooks/06_final_evaluation.ipynb`
 dibuat sebagai laporan akhir tunggal yang memuat SEMUA model (3 baseline
 resmi + 8 kandidat notebook 5) sekaligus.
@@ -281,31 +288,34 @@ Metode baru di notebook 5:
   lebih baik dari Eksperimen B (bobot penuh, 52.4% acc/0.407 F1 macro).
   Trade-off accuracy-vs-F1-macro yang selama ini biner (A vs B) ternyata
   bisa dioptimalkan lebih lanjut lewat interpolasi.
-- **Eksperimen G** — bobot ensemble XGBoost/LightGBM dicari (bukan 50/50
-  tetap): `w_xgb=0.7` sedikit lebih baik dari 50/50 di F1 macro (0.397
-  val vs 0.393), tapi tidak mengalahkan model tunggal terbaik manapun.
-- **Eksperimen H** — stacking (`LogisticRegression` di atas `predict_proba`
-  RF+XGBoost+LightGBM): **akurasi tertinggi dari SELURUH kandidat proyek
-  (58.2% test)**, tapi F1 macro-nya (0.384) yang TERENDAH di antara semua
-  kandidat non-RandomForest — stacking condong ke kelas mayoritas,
-  mengorbankan kelas langka lebih dari model tunggal manapun.
+- **Eksperimen G** *(DIHAPUS 2026-08-31 — di luar scope)* — bobot ensemble
+  XGBoost/LightGBM dicari (bukan 50/50 tetap): `w_xgb=0.7` sedikit lebih baik
+  dari 50/50 di F1 macro (0.397 val vs 0.393), tapi tidak mengalahkan model
+  tunggal terbaik manapun.
+- **Eksperimen H** *(DIHAPUS 2026-08-31 — di luar scope)* — stacking
+  (`LogisticRegression` di atas `predict_proba` RF+XGBoost+LightGBM):
+  akurasi tertinggi dari seluruh kandidat proyek saat itu (58.2% test),
+  tapi F1 macro-nya (0.384) TERENDAH di antara kandidat non-RandomForest —
+  stacking condong ke kelas mayoritas.
+- *(Eksperimen D — ensemble soft-voting 50/50 — juga dihapus 2026-08-31.)*
 
-**Hasil akhir komprehensif (test set, `notebooks/06_final_evaluation.ipynb`,
-11 kandidat dievaluasi)** — diurutkan F1 macro:
+**Hasil akhir komprehensif (test set, `notebooks/06_final_evaluation.ipynb`)** —
+diurutkan F1 macro. *Angka setelah promosi XGBoost (2026-08-27) + penghapusan
+ensemble/stacking (2026-08-31): 8 kandidat.*
 
 | Model | Accuracy | F1 Macro | F1 Weighted |
 |---|---|---|---|
 | **LightGBM (baseline resmi)** | 56.4% | **0.410** | 0.557 |
 | XGBoost (Exp B: balanced penuh) | 52.4% | 0.407 | 0.539 |
 | XGBoost (Exp F: soft-balanced α=0.25) | **57.5%** | 0.406 | **0.560** |
-| Ensemble D (50/50) | 56.9% | 0.400 | 0.555 |
-| Ensemble G (bobot dicari) | 57.3% | 0.397 | 0.556 |
 | LightGBM (Exp C: retuned) | 55.6% | 0.394 | 0.544 |
 | RandomForest (Exp E: retuned) | 48.9% | 0.390 | 0.507 |
 | XGBoost (Exp A: retuned) | 57.5% | 0.390 | 0.554 |
 | XGBoost (baseline resmi) | 57.5% | 0.390 | 0.554 |
-| **Stacking H** | **58.2%** | 0.384 | 0.559 |
 | RandomForest (baseline resmi) | 46.8% | 0.325 | 0.485 |
+
+*(Kandidat historis yang dihapus, untuk rujukan: Stacking H 58.2%/0.384/0.559 ·
+Ensemble D 50/50 56.9%/0.400/0.555 · Ensemble G 57.3%/0.397/0.556.)*
 
 > Tabel di atas: angka **setelah** promosi XGBoost default config.yaml
 > (2026-08-27, lihat "Audit menyeluruh" di bawah). Baris "XGBoost (baseline
@@ -315,22 +325,18 @@ Metode baru di notebook 5:
 
 **Kesimpulan akhir**: **LightGBM (baseline resmi, tidak berubah) tetap
 model utama proyek** — F1 macro tertinggi (prioritas utama karena class
-imbalance ekstrem), sesuai semua analisis sebelumnya. Tapi **XGBoost Exp F
-(soft-balanced α=0.25) adalah temuan baru yang layak dicatat**: F1 macro-nya
-nyaris identik dengan LightGBM (selisih 0.37pp, dalam rentang noise) namun
-unggul di accuracy (+1.1pp), F1 weighted (tertinggi dari SEMUA kandidat),
-DAN top-3/top-5 accuracy (tertinggi dari semua kandidat) — kandidat
-"all-around terbaik" yang sepadan untuk dipertimbangkan sebagai alternatif
-resmi jika prioritas penelitian condong ke accuracy/F1-weighted, bukan
-murni F1 macro. Stacking H direkomendasikan HANYA jika accuracy mentah
-adalah satu-satunya prioritas (mengorbankan kelas langka paling banyak
-dari semua kandidat). **Update 2026-08-27**: `outputs/models/xgboost.pkl`
-resmi kini memakai default config.yaml (promosi dari "acc-tuned" — lihat
-"Audit menyeluruh" di bawah); `lightgbm.pkl` & `randomforest.pkl` tidak
-berubah. Exp F / Stacking H tetap rekomendasi (alternatif), bukan promosi.
-Detail lengkap, seluruh grafik (confusion matrix, feature importance, SHAP,
-radar chart), dan tabel mentah ada di
-`notebooks/06_final_evaluation.ipynb` dan
+imbalance ekstrem), sesuai semua analisis. **XGBoost Exp F (soft-balanced
+α=0.25)** adalah alternatif "all-around terbaik": F1 macro nyaris identik
+dengan LightGBM (selisih ~0.4pp, dalam rentang noise) namun unggul di
+accuracy (+1.1pp), F1 weighted, dan top-3/top-5 — sepadan dipertimbangkan
+sebagai alternatif resmi jika prioritas condong ke accuracy/F1-weighted.
+**Update 2026-08-27**: `outputs/models/xgboost.pkl` resmi kini memakai
+default config.yaml (promosi dari "acc-tuned"); `lightgbm.pkl` &
+`randomforest.pkl` tidak berubah. Exp F tetap rekomendasi (alternatif),
+bukan promosi. **Update 2026-08-31**: Eksperimen D/G/H (ensemble + stacking)
+dihapus dari notebook — di luar ruang lingkup. Detail lengkap, grafik
+(confusion matrix, feature importance, SHAP, radar chart), dan tabel mentah
+ada di `notebooks/06_final_evaluation.ipynb` dan
 `outputs/results/nb06_final_comparison.csv`/`nb06_summary.json`.
 
 > **Catatan keandalan lanjutan**: eksekusi notebook 5/6 kali ini sempat
@@ -453,6 +459,19 @@ model utama proyek** (prioritas F1 macro karena class imbalance ekstrem).
 `notebooks_dds/` tidak diubah (arsip historis, kini beda dari `notebooks/`
 karena promosi XGBoost).
 
+**Penghapusan ensemble & stacking dari notebook (2026-08-31)**: atas
+permintaan, Eksperimen **D** (soft-voting 50/50), **G** (soft-voting bobot
+dicari), dan **H** (stacking `LogisticRegression`) dihapus dari
+`notebooks/05` dan `notebooks/06` — di luar ruang lingkup penelitian, yang
+membandingkan RF vs XGBoost vs LightGBM sebagai **model tunggal**. Poin 2 & 3
+di atas sebagian tergantikan: `notebooks/05` sekarang hanya Eksperimen
+A/B/C/E/F dan menyimpan 5 model kandidat (tanpa `ensemble_manifest.json` /
+`stacking_manifest.json` / `stacking_expH_meta_logreg.pkl` — file-file itu
+dihapus); `notebooks/06` mengevaluasi 8 kandidat (3 baseline + 5 retuning),
+tidak lagi 11. Keduanya dijalankan ulang; angka model tunggal tidak berubah
+(deterministik). Kesimpulan tidak berubah: LightGBM model utama, XGBoost
+Exp F alternatif all-around.
+
 ---
 
 ## Batas Ruang Lingkup
@@ -478,6 +497,9 @@ karena promosi XGBoost).
 - Web app / API serving
 - Target `target` dengan marker doubled/redoubled (66 kelas) sebagai
   primary — gunakan hanya untuk analisis tambahan
+- **Ensemble / soft-voting / stacking / meta-learning** dari ketiga model —
+  dicoba di notebook 5 (Eksperimen D/G/H) lalu **dihapus 2026-08-31**;
+  penelitian membandingkan RF vs XGBoost vs LightGBM sebagai model tunggal
 
 ---
 
@@ -527,8 +549,8 @@ notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; re-run pen
   02_eda_features.ipynb       EDA & dokumentasi 182 fitur
   03_modeling.ipynb           Training RF/XGBoost/LightGBM (hyperparameter dari configs/config.yaml)
   04_evaluation.ipynb         Evaluasi final, SHAP, radar
-  05_improvement_experiments.ipynb  Eksperimen A–H (retuning, weighting, ensemble, stacking)
-  06_final_evaluation.ipynb   Laporan komprehensif 11 kandidat (baseline + Eksperimen A–H)
+  05_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning hyperparameter + class weighting model tunggal)
+  06_final_evaluation.ipynb   Laporan komprehensif 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
 
 notebooks_dds/                 ARSIP historis — identik dengan notebooks/ sebelum
                                konsolidasi 2026-07-17. TIDAK dieksekusi ulang; kini
@@ -623,8 +645,8 @@ menggantikan hyperparameter "acc-tuned" usang) unggul di accuracy/top-3/top-5.
 Sumber: `outputs/results/test_comparison.csv`. Riwayat lengkap kenaikan
 bertahap (52.1% → 56.4% F1w, lewat penambahan DDS + data non-BBO PBN +
 `class_weight`) ada di "Status Proyek" di atas dan
-`experiments/2026-07-15/README.md`. Perbandingan 11 kandidat (retuning,
-ensemble, stacking) di skala 49.755-board ada di
+`experiments/2026-07-15/README.md`. Perbandingan 8 kandidat model tunggal
+(retuning hyperparameter + class weighting) di skala 49.755-board ada di
 `notebooks/05_improvement_experiments.ipynb` + `06_final_evaluation.ipynb`.
 
 ---
