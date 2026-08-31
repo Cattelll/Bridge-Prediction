@@ -472,6 +472,22 @@ tidak lagi 11. Keduanya dijalankan ulang; angka model tunggal tidak berubah
 (deterministik). Kesimpulan tidak berubah: LightGBM model utama, XGBoost
 Exp F alternatif all-around.
 
+**Eksperimen seleksi fitur SHAP (2026-08-31)**: diminta menguji seleksi
+fitur berbasis SHAP. `experiments/2026-08-31/01_shap_feature_selection.ipynb` —
+ranking `mean |SHAP|` (LightGBM & XGBoost, sub-sampel train 2.000) → retrain
+di top-k → bandingkan ke baseline 182 fitur. **Hasil**: top-40 fitur SHAP
+(LightGBM) **setara** baseline 182 di test set (F1 macro 0.4142 vs 0.4101 —
+selisih di dalam noise urutan kolom ~±0.8pp), pakai 78% fitur lebih sedikit.
+Kurva datar mulai k≈40. **Redundansi per-seat besar** (top-40 simpan cuma
+5/96 fitur per-kursi, 0/8 dealer/vuln). **Sirkularitas auction terkonfirmasi
+kuantitatif**: 3 fitur SHAP teratas = `auction_ew_bids`/`auction_len`/
+`auction_ns_bids` (dihitung dari lelang yang sudah selesai). **Rekomendasi:
+TIDAK dipromosikan** ke `notebooks/` (gain di dalam noise, ongkos mengubah
+`feature_columns.json` invariant tidak sepadan) — berharga sebagai analisis
+fitur untuk skripsi. Tindak lanjut yang disarankan: ablasi eksplisit fitur
+auction sirkular. `notebooks/` + `data/processed/` + `outputs/` resmi TIDAK
+tersentuh. Detail: `experiments/2026-08-31/README.md`.
+
 ---
 
 ## Batas Ruang Lingkup
