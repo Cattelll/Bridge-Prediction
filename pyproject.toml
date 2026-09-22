@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "bridge-prediction"
@@ -17,12 +17,13 @@ dependencies = [
     "pandas>=2.1",
     "numpy>=1.26",
     "pyyaml>=6.0",
+    "endplay>=0.5.11",
 ]
 
 [project.optional-dependencies]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 dev     = ["pytest>=7.0", "ruff>=0.4"]
-experiments = ["imbalanced-learn>=0.12", "endplay>=0.5.11"]
+experiments = ["imbalanced-learn>=0.12"]
 
 [tool.setuptools.packages.find]
 where = ["."]

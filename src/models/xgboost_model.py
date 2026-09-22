@@ -1,6 +1,5 @@
 """XGBoost wrapper (BaseModel) around xgboost.XGBClassifier.
 
-Best-performing model in this project (50.2% accuracy, 83.6% top-5).
 Defaults mirror configs/config.yaml.
 """
 
@@ -27,7 +26,7 @@ class XGBModel(BaseModel):
             colsample_bytree=0.8,
             random_state=42,
             n_jobs=-1,
-            eval_metric="mlogloss",
+            eval_metric="logloss",
             verbosity=0,
         )
         defaults.update(kwargs)

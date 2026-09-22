@@ -25,7 +25,7 @@ Prefix `N_`, `E_`, `S_`, `W_`. Dihitung oleh `extract_hand_features()`.
 | `doubletons` | int | Jumlah suit dengan tepat 2 kartu |
 | `ltc` | int | Losing Trick Count — per suit: `min(panjang,3)` dikurangi jumlah A/K/Q di antara kartu teratas sejumlah itu |
 | `longest_suit_len` | int | Panjang suit terpanjang (tie-break S>H>D>C) |
-| `longest_{S,H,D,C}` | 0/1 | One-hot suit mana yang terpanjang |
+| `is_longest_{S,H,D,C}` | 0/1 | One-hot suit mana yang terpanjang |
 
 ## 2. Partnership Features (44 = 22 fitur × 2 partnership)
 
@@ -49,7 +49,7 @@ Prefix `ns_` (North-South) dan `ew_` (East-West). Dihitung oleh
 
 | Fitur | Tipe | Keterangan |
 |---|---|---|
-| `hcp_ns_advantage` | int | `ns_hcp − ew_hcp` |
+| `ns_hcp_advantage` | int | `ns_hcp − ew_hcp` |
 
 ## 4. Deal Context (8 fitur)
 

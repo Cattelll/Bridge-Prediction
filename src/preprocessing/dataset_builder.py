@@ -31,7 +31,17 @@ _META_COLS = {
     "_board_number", "_source_file", "_room", "_declarer",
     "_result", "_tricks_made",
 }
-_TARGET_COLS = {"target", "target_base", "target_category"}
+_TARGET_COLS = {"target", "target_base", "target_category", "matches_par_contract"}
+
+# DDS par columns are the direct inputs used to compute `matches_par_contract`
+# (see build_dataset step 2) — keeping them as model features would leak the
+# label. Kept in the saved CSVs for analysis/audit, excluded from
+# feature_columns.json.
+_LEAKAGE_COLS = {
+    "dd_par_level", "dd_par_score", "dd_par_declarer_is_ns",
+    "dd_par_denom_S", "dd_par_denom_H", "dd_par_denom_D",
+    "dd_par_denom_C", "dd_par_denom_N",
+}
 
 
 def _get_dds_dataframe(boards, dds_cache_path: str | Path | None = None) -> pd.DataFrame:
@@ -89,14 +99,18 @@ def build_dataset(
     Args:
         raw_dir        : directory containing .lin files
         output_dir     : where to save processed CSVs
-        target_col     : which target to use ('target_base', 'target', 'target_category')
+        target_col     : which target to use ('target_base', 'target',
+                         'target_category', or 'matches_par_contract' — the
+                         last is computed from DDS par and requires
+                         include_dds=True)
         train_ratio    : fraction for training
         val_ratio      : fraction for validation
         test_ratio     : fraction for test
         random_seed    : reproducibility seed
         remove_pass    : if True, drop passed-out boards from the dataset
         include_dds    : if True, add Double-Dummy Solver features (optional,
-                         see CLAUDE.md scope — requires `endplay`)
+                         see CLAUDE.md scope — requires `endplay`). Also
+                         required to compute the `matches_par_contract` target.
         dds_cache_path : path to a precomputed DDS CSV (keyed by
                          _source_file/_room/_board_number) to avoid recomputing;
                          if None or missing, DDS is computed from scratch
@@ -139,7 +153,47 @@ def build_dataset(
         df[col] = df[col].astype(str)
 
     # ------------------------------------------------------------------
-    # 2. Cleaning
+    # 2. Optional: Double-Dummy Solver features + `matches_par_contract` target
+    # ------------------------------------------------------------------
+    # Merged BEFORE cleaning/encoding: the `matches_par_contract` target
+    # (does the actual bid contract match the DDS par contract's
+    # level+strain?) depends on these columns, so they must exist before
+    # target_col is cleaned/encoded below.
+    if include_dds:
+        print("[DDS] Menambahkan fitur Double-Dummy Solver...")
+        df_dds = _get_dds_dataframe(boards, dds_cache_path)
+        dds_feature_cols = [
+            c for c in df_dds.columns if c not in ("_source_file", "_room", "_board_number")
+        ]
+        before = len(df)
+        df = df.merge(df_dds, on=["_source_file", "_room", "_board_number"], how="left")
+        assert len(df) == before, "DDS join changed row count — identity key isn't unique"
+
+        n_missing = df[dds_feature_cols].isnull().any(axis=1).sum()
+        if n_missing:
+            print(f"[WARN] {n_missing} row(s) missing DDS values — dropping them")
+            df = df.dropna(subset=dds_feature_cols).reset_index(drop=True)
+
+        print(f"      DDS fitur ditambahkan: {len(dds_feature_cols)}")
+
+        # matches_par_contract: does target_base's level+strain match the DDS
+        # par contract's level+strain? Built here (not in src/features/dds.py)
+        # from the columns just merged above.
+        from src.features.dds import STRAINS
+
+        denom_idx = df[[f"dd_par_denom_{s}" for s in STRAINS]].to_numpy().argmax(axis=1)
+        par_contract = np.where(
+            df["dd_par_level"] == 0,
+            "PASS",
+            df["dd_par_level"].astype(int).astype(str) + np.array(STRAINS)[denom_idx],
+        )
+        df["matches_par_contract"] = (df["target_base"] == par_contract).astype(int)
+        n_optimal = int(df["matches_par_contract"].sum())
+        print(f"      matches_par_contract : {n_optimal}/{len(df)} board optimal "
+              f"({n_optimal / len(df):.1%})")
+
+    # ------------------------------------------------------------------
+    # 3. Cleaning
     # ------------------------------------------------------------------
     print("[3/5] Cleaning...")
 
@@ -149,8 +203,15 @@ def build_dataset(
         df = df[df[target_col] != "PASS"].copy()
         print(f"      Removed {before - len(df)} passed-out boards.")
 
+    # Feature columns = everything except metadata, target columns, and the
+    # DDS par columns that directly define `matches_par_contract` (would leak
+    # the label into the inputs).
+    feature_cols = [
+        c for c in df.columns
+        if c not in _META_COLS and c not in _TARGET_COLS and c not in _LEAKAGE_COLS
+    ]
+
     # Drop exact duplicates on feature columns only
-    feature_cols = [c for c in df.columns if c not in _META_COLS and c not in _TARGET_COLS]
     before = len(df)
     df = df.drop_duplicates(subset=feature_cols).reset_index(drop=True)
     print(f"      Removed {before - len(df)} duplicate rows.")
@@ -173,12 +234,12 @@ def build_dataset(
         df = df[~df[target_col].isin(rare)].copy().reset_index(drop=True)
 
     # ------------------------------------------------------------------
-    # 3. Label encoding
+    # 4. Label encoding
     # ------------------------------------------------------------------
     print("[4/5] Encoding labels...")
     le = LabelEncoder()
     df["label"] = le.fit_transform(df[target_col])
-    label_map = {cls: int(idx) for idx, cls in enumerate(le.classes_)}
+    label_map = {str(cls): int(idx) for idx, cls in enumerate(le.classes_)}
     print(f"      Classes      : {len(le.classes_)}")
     print(f"      Classes list : {list(le.classes_)}")
 
@@ -191,29 +252,7 @@ def build_dataset(
     print(f"      Encoder saved: {encoder_path}")
 
     # ------------------------------------------------------------------
-    # 3b. Optional: Double-Dummy Solver features
-    # ------------------------------------------------------------------
-    if include_dds:
-        print("[DDS] Menambahkan fitur Double-Dummy Solver...")
-        df_dds = _get_dds_dataframe(boards, dds_cache_path)
-        dds_feature_cols = [
-            c for c in df_dds.columns if c not in ("_source_file", "_room", "_board_number")
-        ]
-        before = len(df)
-        df = df.merge(df_dds, on=["_source_file", "_room", "_board_number"], how="left")
-        assert len(df) == before, "DDS join changed row count — identity key isn't unique"
-
-        n_missing = df[dds_feature_cols].isnull().any(axis=1).sum()
-        if n_missing:
-            print(f"[WARN] {n_missing} row(s) missing DDS values — dropping them")
-            df = df.dropna(subset=dds_feature_cols).reset_index(drop=True)
-
-        feature_cols = feature_cols + dds_feature_cols
-        print(f"      DDS fitur ditambahkan: {len(dds_feature_cols)} "
-              f"(total fitur: {len(feature_cols)})")
-
-    # ------------------------------------------------------------------
-    # 4. Train / val / test split — GROUP-AWARE by physical deal
+    # 5. Train / val / test split — GROUP-AWARE by physical deal
     # ------------------------------------------------------------------
     # BBO vugraph records each board twice ("open room" / "closed room"):
     # two different pairs bid the SAME dealt hands. That means ~all

@@ -174,7 +174,7 @@ def extract_hand_features(hand: Hand, prefix: str) -> dict:
     f[f"{prefix}longest_suit_len"] = long_len
     # One-hot for longest suit
     for s in SUITS:
-        f[f"{prefix}longest_{s}"] = int(long_suit == s)
+        f[f"{prefix}is_longest_{s}"] = int(long_suit == s)
     return f
 
 
@@ -358,7 +358,7 @@ def extract_features(board: BoardRecord) -> Optional[dict]:
     f.update(extract_partnership_features(board.hands["E"], board.hands["W"], prefix="ew_"))
 
     # HCP advantage
-    f["hcp_ns_advantage"] = f["ns_hcp"] - f["ew_hcp"]
+    f["ns_hcp_advantage"] = f["ns_hcp"] - f["ew_hcp"]
 
     # Deal-level
     f.update(extract_deal_features(board))

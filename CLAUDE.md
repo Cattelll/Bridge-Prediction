@@ -5,23 +5,32 @@ Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
 (Random Forest, XGBoost, LightGBM) untuk memprediksi kontrak optimal
 Contract Bridge dari rekaman BBO LIN format.
 
-## Status Proyek (Juli–Agustus 2026)
-Parser, feature engineering, training, dan evaluasi sudah diimplementasi.
-`notebooks/01-06` adalah pipeline resmi saat ini: 606 file `.lin` + 1.390
-file `.pbn` gabungan, 182 fitur (164 kanonik + 18 DDS), **49.755 board**,
-**dieksekusi ulang penuh 01→06 pada 2026-08-27** (kernel `bridge-venv`) —
-semua notebook lolos "Restart & Run All" berurutan tanpa error;
-`data/processed/`, `outputs/models/*.pkl`, `outputs/results/*` (termasuk
-`nb04_summary.json` yang dipakai `scripts/report.py`) semuanya konsisten
-dan sinkron. **Perubahan besar 2026-08-27**: XGBoost baseline resmi
-dipromosikan ke default `configs/config.yaml` (57.5% acc / 0.390 F1 macro,
-naik dari 56.1%/0.342); nb05 & nb06 diperbaiki sehingga kembali
-reproducible. Detail: "Audit menyeluruh notebooks/01–06" di bawah.
+## Status Proyek (September 2026)
+**Perubahan arah penelitian (2026-09-18)**: target diganti dari klasifikasi
+36-kelas (`target_base`) menjadi **klasifikasi biner `matches_par_contract`** — apakah
+kontrak yang benar-benar dibid (auction) sama level+strain dengan kontrak
+**par** menurut Double-Dummy Solver. `notebooks/01-06` adalah pipeline
+resmi saat ini: 606 file `.lin` + 1.390 file `.pbn` gabungan, **174 fitur**
+model (164 kanonik + 10 trik DD per strain; 8 kolom par DDS dikeluarkan
+dari fitur karena jadi bahan langsung label — lihat leakage di bawah),
+**49.755 board**, target biner (25.2% optimal / 74.8% tidak optimal).
+**Dieksekusi ulang penuh 01→06 pada 2026-09-18** — semua notebook lolos
+"Restart & Run All" berurutan tanpa error. Detail lengkap di bawah
+("Perubahan arah penelitian — target biner `matches_par_contract` (2026-09-18)").
 **Catatan**: `scripts/run_pipeline.py` **belum diupdate** dan masih
-membangun pipeline 164-fitur/LIN-only yang lama — lihat peringatan di
-bawah, jangan dijalankan tanpa diupdate dulu. `docs/SUMMARY.md` juga
-masih mendeskripsikan pipeline lama (10.223 board/164 fitur) — belum
-disinkronkan.
+membangun pipeline 164-fitur/LIN-only/36-kelas yang lama — lihat peringatan
+di bawah, jangan dijalankan tanpa diupdate dulu. `docs/SUMMARY.md` juga
+masih mendeskripsikan pipeline lama — belum disinkronkan. `scripts/report.py`
+juga belum diupdate untuk metrik biner (masih mereferensikan
+`top_3_accuracy` yang sudah tidak ada di `nb04_summary.json`/`nb06_summary.json`
+— tidak crash, hanya menampilkan "n/a" untuk kolom itu).
+
+Riwayat lengkap era 36-kelas (Juli–Agustus 2026: perbaikan split, penambahan
+fitur DDS, perluasan data PBN, konsolidasi notebook, promosi XGBoost, audit
+menyeluruh, dll.) dipertahankan di bawah sebagai riwayat — semua angka di
+paragraf-paragraf itu **superseded** oleh perubahan arah 2026-09-18 di atas,
+tapi keputusan data/parser/fitur-nya (606 LIN, 1.390 PBN, 164 fitur kanonik,
+18 fitur DDS mentah) tetap jadi fondasi pipeline saat ini.
 
 **Perbaikan metodologi split (2026-07-09, sore)**: ditemukan kebocoran
 data — BBO vugraph mencatat tiap papan dua kali (open/closed room, kartu
@@ -488,31 +497,191 @@ fitur untuk skripsi. Tindak lanjut yang disarankan: ablasi eksplisit fitur
 auction sirkular. `notebooks/` + `data/processed/` + `outputs/` resmi TIDAK
 tersentuh. Detail: `experiments/2026-08-31/README.md`.
 
+**Perubahan arah penelitian — target biner `matches_par_contract` (2026-09-18)**: atas
+permintaan eksplisit, seluruh pipeline resmi diganti dari klasifikasi
+36-kelas (`target_base`) menjadi **klasifikasi biner**: apakah kontrak yang
+benar-benar dibid manusia optimal (sama persis level+strain dengan kontrak
+par DDS) atau tidak.
+
+**Definisi label `matches_par_contract`** (disepakati lewat diskusi eksplisit sebelum
+implementasi): `matches_par_contract = 1` jika level+strain `target_base` sama persis
+dengan level+strain kontrak par DDS (`dd_par_level` + `dd_par_denom`), untuk
+SEMUA board apa pun sisi declarer-nya. Declarer dan skor tidak
+diperhitungkan, hanya level+strain. Catatan penting yang mengoreksi asumsi
+awal: `endplay.dds.par()` cuma menghasilkan **satu** kontrak par per board
+(bukan par terpisah untuk NS dan EW), jadi tidak ada konsep "par dari sisi
+NS" yang berbeda dari "par dari sisi EW" — pertanyaan "fokus ke NS" dari
+diskusi awal diselesaikan dengan membandingkan SEMUA board tanpa filter sisi
+declarer. Dihitung di `build_dataset()` (`src/preprocessing/dataset_builder.py`),
+BUKAN di `src/features/dds.py` (yang tidak diubah sama sekali) — dari
+kolom `dd_par_level`/`dd_par_denom_*` yang sudah di-merge, dibandingkan
+dengan `target_base`.
+
+**Anti-leakage**: 8 kolom DDS yang jadi bahan langsung label
+(`dd_par_level`, `dd_par_denom_S/H/D/C/N`, `dd_par_score`,
+`dd_par_declarer_is_ns`) dikeluarkan permanen dari `feature_columns.json`
+(`_LEAKAGE_COLS` di `dataset_builder.py`) — tetap tersimpan di CSV untuk
+analisis/audit (lihat korelasi di `notebooks/02_eda_features.ipynb` bagian
+7, yang menunjukkan `dd_par_level`/`dd_par_declarer_is_ns` berkorelasi jauh
+lebih kuat dengan `matches_par_contract` dibanding fitur lain manapun — persis seperti
+diharapkan, karena keduanya membentuk label). 10 kolom trik DD per strain
+(`ns_dd_*`/`ew_dd_*`) TIDAK otomatis dikeluarkan — keputusan pakai/buang
+divalidasi empiris lewat ablasi baru di `notebooks/03_modeling.ipynb`
+bagian 1b (RandomForest cepat, 174 fitur vs 164 fitur kanonik saja,
+dibandingkan di validation set, ambang keputusan +0.5pp F1 macro). **Hasil
+ablasi**: 174 fitur (F1 macro val 0.7348) mengalahkan 164 fitur (0.6927)
+sebesar **+4.21pp** — jauh di atas ambang, trik DD per strain
+**dipertahankan**. `feature_columns.json` resmi = **174 fitur** (164
+kanonik + 10 trik DD).
+
+**Restrukturisasi `build_dataset()`** (`src/preprocessing/dataset_builder.py`):
+blok merge fitur DDS dipindah dari tahap akhir ("3b", setelah label
+encoding) ke tahap awal (setelah ekstraksi fitur, sebelum cleaning/encoding)
+— perlu karena `matches_par_contract` sekarang bergantung pada kolom DDS, jadi harus
+tersedia sebelum label di-encode. Efek samping kecil yang disengaja: dedup
+baris sekarang mempertimbangkan kolom DDS juga (sebelumnya tidak) — risiko
+perubahan hasil dedup minimal karena DDS deterministik dari tangan yang
+sudah tercakup fitur kanonik.
+
+**Metrik evaluasi diganti untuk biner** (`src/evaluation/metrics.py`):
+top-k accuracy (tidak bermakna untuk 2 kelas) dihapus, diganti ROC-AUC,
+PR-AUC (average precision), dan precision/recall/F1 kelas positif — di
+samping accuracy/F1 macro/F1 weighted yang tetap ada. `configs/config.yaml`
+(`evaluation.top_k`) juga dihapus, `evaluation.metrics` ditambah `roc_auc`/
+`average_precision`. `src/models/xgboost_model.py`: `eval_metric="mlogloss"`
+(multi-class-only, akan salah untuk 2 kelas) diganti `"logloss"` — begitu
+juga instansiasi `XGBClassifier` langsung di sel learning-curve
+`notebooks/03` dan grid manual `notebooks/05`.
+
+**Insiden lingkungan (ditemukan & diperbaiki di sesi yang sama)**: instalasi
+Python 3.12 dasar yang jadi basis `.venv` proyek (`AppData/Local/Programs/
+Python/Python312`) hilang dari mesin ini (kemungkinan terhapus di luar
+sesi) — `.venv\Scripts\python.exe` gagal total ("No Python at ..."), dan
+tidak ada Python/conda lain yang terpasang sama sekali. Diperbaiki dengan
+`py install 3.12` (Python launcher, mengunduh installer resmi dari
+python.org) lalu `.venv` dibuat ulang dari nol + `pip install -e
+".[notebook,dev]"` + registrasi ulang kernel Jupyter (`python -m ipykernel
+install --user --name bridge --display-name "Python 3.12 (Bridge)"`).
+Ditemukan sekaligus 2 bug terpisah di `pyproject.toml`: (1)
+`build-backend = "setuptools.backends.legacy:build"` tidak valid (modul
+tidak ada), menyebabkan SEMUA instalasi editable gagal — diperbaiki ke
+`"setuptools.build_meta"` (nilai standar); (2) `endplay` (DDS) sebelumnya
+cuma ada di extra opsional `experiments`, padahal sekarang **wajib** untuk
+pipeline resmi (label `matches_par_contract` butuh DDS) — dipindah ke dependencies
+dasar, `experiments` extra sekarang cuma `imbalanced-learn`.
+
+**Hasil (test set, semua notebook 01→06 dieksekusi ulang penuh 2026-09-18,
+tanpa error)**:
+
+| Model | Accuracy | F1 Macro | F1 Weighted | ROC-AUC | PR-AUC |
+|---|---|---|---|---|---|
+| Baseline resmi RandomForest | 80.8% | 0.736 | 0.805 | 0.800 | 0.634 |
+| Baseline resmi XGBoost | 81.0% | 0.691 | 0.786 | 0.800 | 0.634 |
+| Baseline resmi LightGBM | 79.9% | 0.741 | 0.802 | 0.814 | 0.658 |
+| Exp A — XGBoost retuned (= default config.yaml) | 82.5% | 0.731 | 0.810 | 0.820 | 0.670 |
+| Exp B — XGBoost + sample_weight balanced penuh | 81.0% | 0.749 | 0.810 | 0.818 | 0.667 |
+| Exp C — LightGBM retuned | 81.0% | 0.749 | 0.810 | 0.820 | 0.670 |
+| Exp E — RandomForest retuned (`max_features` dkk.) | 81.2% | 0.745 | 0.810 | 0.818 | 0.666 |
+| **Exp F — XGBoost soft-balanced (α=0.25)** | **82.3%** | **0.750** | **0.817** | 0.818 | 0.663 |
+
+Baseline mayoritas (selalu tebak "tidak optimal") = 74.8% accuracy — semua
+model mengalahkannya, dan F1 macro (bukan cuma accuracy) menunjukkan model
+benar-benar belajar membedakan kedua kelas, bukan cuma menebak mayoritas.
+Tidak ada tanda leakage residual (ROC-AUC ~0.80-0.82, bukan mendekati 1.0).
+
+**Kesimpulan**: kandidat **terbaik keseluruhan (F1 macro DAN accuracy
+sama-sama kompetitif) adalah XGBoost Eksperimen F (soft-balanced,
+`sample_weight` parsial α=0.25)** — F1 macro tertinggi (0.7498) sekaligus
+accuracy tertinggi kedua (82.3%, cuma 0.2pp di bawah Exp A). Ini beda dari
+era 36-kelas (di mana LightGBM class_weight vs XGBoost accuracy-tinggi
+adalah trade-off yang jelas) — untuk `matches_par_contract`, satu kandidat XGBoost
+unggul di kedua sumbu sekaligus. **Baseline resmi TIDAK diubah**
+(`outputs/models/{randomforest,xgboost,lightgbm}.pkl` masih hyperparameter
+`configs/config.yaml` apa adanya) — keputusan promosi kandidat Eksperimen F
+ke baseline resmi belum diambil, konsisten dengan konvensi proyek
+("`notebooks/05` tidak menimpa baseline resmi", lihat `notebooks/06`).
+Detail lengkap, grafik, dan tabel mentah ada di
+`notebooks/03_modeling.ipynb` (ablasi fitur), `notebooks/04_evaluation.ipynb`,
+`notebooks/05_improvement_experiments.ipynb`
+(`outputs/results/nb05_summary.json`/`nb05_test_comparison.csv`), dan
+`notebooks/06_final_evaluation.ipynb`
+(`outputs/results/nb06_final_comparison.csv`/`nb06_summary.json`).
+
+`notebooks_dds/` dan `experiments/` **tidak disentuh** — tetap arsip
+historis skema 36-kelas lama.
+
+**Perapian nama kolom fitur (2026-09-20)**: diminta merapikan penamaan
+dataset. Ditemukan dua ketidakkonsistenan (bukan bug, murni kosmetik):
+(1) `hcp_ns_advantage` tidak mengikuti konvensi prefix `ns_`/`ew_` yang
+dipakai semua kolom partnership lain → diganti **`ns_hcp_advantage`**;
+(2) `{seat}_longest_{S,H,D,C}` (one-hot "suit ini terpanjang?") gampang
+tertukar dengan `{seat}_len_{S,H,D,C}` (panjang suit, nilai integer) →
+diganti **`{seat}_is_longest_{S,H,D,C}`**. Diperbaiki di
+`src/features/engineer.py`; kolom `label` (LabelEncoder atas `target_col`)
+dicek dan **tidak diubah** — sempat terlihat seperti duplikat `matches_par_contract`
+(nilainya memang identik sekarang karena `target_col` sudah biner), tapi
+ternyata dipakai langsung sebagai `y_train`/`y_test` di 5 notebook (02–06)
++ `scripts/run_pipeline.py` + internal `dataset_builder.py` — bukan sisa,
+sengaja jadi abstraksi target yang seragam terlepas dari `target_col` aktif.
+Karena rename menyentuh kolom di dataset resmi, `notebooks/01→06`
+**dieksekusi ulang penuh** — cache DDS (`data/*_dds_cache*.csv`) dipakai
+ulang (tidak disentuh oleh rename, hanya nama fitur kanonik yang berubah)
+sehingga rebuild jauh lebih cepat dari komputasi DDS awal. Semua 6 notebook
+lolos tanpa error; hasil test set **identik** dengan angka yang sudah
+tercatat di atas (XGBoost Exp F tetap 82.3%/F1 macro 0.750, dst.) —
+mengonfirmasi rename murni kosmetik, tidak mengubah data atau model.
+`docs/FEATURES.md` diupdate mengikuti nama baru.
+
+**Rename kolom target: `is_optimal` → `matches_par_contract` (2026-09-20,
+lanjutan)**: atas permintaan eksplisit, kolom target biner diganti nama dari
+`is_optimal` menjadi **`matches_par_contract`** — nama baru menggambarkan
+definisi persis (kecocokan level+strain dengan kontrak par DDS) tanpa istilah
+"optimal" yang lebih longgar/ambigu. **Definisi, nilai, dan hasil model tidak
+berubah** — murni rename. Diperbaiki di `src/preprocessing/dataset_builder.py`
+(`_TARGET_COLS`, kolom `df["matches_par_contract"]`, docstring `target_col`),
+`src/evaluation/metrics.py` (docstring), `configs/config.yaml` (komentar),
+`notebooks/01-06` (semua sel kode & markdown yang mereferensikan nama kolom,
+termasuk kunci JSON `nb04_summary.json`: `is_optimal_rate_test` →
+`matches_par_contract_rate_test` — tidak ada notebook lain yang membaca kunci
+itu, aman diganti), dan `docs/SUMMARY.md`. Notebook 01→06 **dieksekusi ulang
+penuh** lagi setelah rename (cache DDS dipakai ulang); hasil test set
+identik dengan sebelumnya. `notebooks_dds/` dan `experiments/` **tidak
+disentuh** (arsip historis skema 36-kelas lama, tidak pernah punya kolom
+ini). Semua paragraf riwayat "Status Proyek" di atas (termasuk yang
+bertanggal sebelum 2026-09-20) sudah ditimpa memakai nama baru
+`matches_par_contract` demi konsistensi dokumen — kolom itu sebenarnya baru
+disebut `matches_par_contract` mulai hari ini, dokumen ini cuma
+menyamakan penamaan secara retroaktif; tidak ada perubahan kode/data yang
+tersirat pada tanggal-tanggal sebelum 2026-09-20 akibat ini.
+
 ---
 
 ## Batas Ruang Lingkup
 
 ### Yang ada di dalam ruang lingkup
 - Tiga model tree-based: RF, XGBoost, LightGBM
-- 164 fitur dari data kartu + lelang
+- 164 fitur kanonik dari data kartu + lelang
 - **Fitur turunan double-dummy solver (`endplay`)** — disetujui masuk
-  scope 2026-07-15, setelah ditemukan bahwa akurasi model sudah
-  mendekati batas konsistensi bidding manusia sendiri (37.6% pasangan
-  open/closed-room BBO sepakat kontrak sama persis). Fitur: DD tricks
-  per strain untuk NS/EW (`calc_dd_table`) dan kontrak par
-  (`par()`) — dipakai sebagai fitur TAMBAHAN opsional di
-  `experiments/`, bukan pengganti 164 fitur kanonik, kecuali hasilnya
-  divalidasi cukup berharga untuk dipromosikan ke pipeline utama.
-- Target utama: `target_base` (36 kelas: PASS + 35 kontrak)
-- Evaluasi: accuracy, F1 macro/weighted, top-k accuracy, SHAP
+  scope 2026-07-15. 10 fitur trik DD per strain (`ns_dd_*`/`ew_dd_*`)
+  jadi fitur model permanen (divalidasi lewat ablasi, `notebooks/03`);
+  8 kolom par DDS (`dd_par_*`) dikeluarkan dari fitur model karena jadi
+  bahan langsung label `matches_par_contract` (leakage) — lihat "Status Proyek"
+  2026-09-18.
+- **Target utama: `matches_par_contract` (biner)** — apakah kontrak yang dibid
+  manusia sama level+strain dengan kontrak par DDS. Menggantikan
+  `target_base` (36 kelas) sejak 2026-09-18; `target_base`/`target`/
+  `target_category` tetap tersimpan di CSV sebagai kolom historis/analisis,
+  bukan lagi target training.
+- Evaluasi: accuracy, F1 macro/weighted/positif, ROC-AUC, PR-AUC, SHAP
 
 ### Yang di luar ruang lingkup — jangan ditambahkan tanpa diskusi
 - Neural network / deep learning
 - Reinforcement learning / game theory
 - Real-time / streaming prediction
 - Web app / API serving
-- Target `target` dengan marker doubled/redoubled (66 kelas) sebagai
-  primary — gunakan hanya untuk analisis tambahan
+- Target `target_base` (36 kelas) atau `target` dengan marker
+  doubled/redoubled (66 kelas) sebagai primary — status 2026-09-18: hanya
+  untuk analisis tambahan/historis, `matches_par_contract` biner adalah target utama
 - **Ensemble / soft-voting / stacking / meta-learning** dari ketiga model —
   dicoba di notebook 5 (Eksperimen D/G/H) lalu **dihapus 2026-08-31**;
   penelitian membandingkan RF vs XGBoost vs LightGBM sebagai model tunggal
@@ -523,12 +692,15 @@ tersentuh. Detail: `experiments/2026-08-31/README.md`.
 
 ```
 Python  : 3.12
-Kernel  : "Python 3.12 (Bridge)"  — didaftarkan via ipykernel
-Catatan : .venv diblokir Windows Application Control di mesin ini
-          Gunakan Python sistem langsung
+Kernel  : "bridge" / "Python 3.12 (Bridge)"  — didaftarkan via ipykernel
+Catatan : .venv sempat rusak total 2026-09-18 (install Python dasarnya
+          hilang dari mesin) — diperbaiki dengan `py install 3.12` +
+          rebuild .venv dari nol. Lihat "Status Proyek" 2026-09-18 untuk
+          detail insiden (termasuk bug build-backend di pyproject.toml).
 ```
 
-Install dependencies:
+Install dependencies (`endplay`/DDS sekarang wajib, bukan opsional — target
+`matches_par_contract` butuh DDS):
 ```powershell
 pip install -e ".[notebook,dev]"
 ```
@@ -550,8 +722,13 @@ src/
   features/
     engineer.py            164 fitur kanonik: extract_features(board) → dict
     dds.py                  18 fitur Double-Dummy Solver (endplay): compute_dds_features()
+                            (tidak diubah oleh perubahan target biner — matches_par_contract
+                            dihitung di dataset_builder.py dari kolom ini)
   preprocessing/
-    dataset_builder.py     build_dataset(), load_splits() — dukung extra_boards + DDS
+    dataset_builder.py     build_dataset(), load_splits() — dukung extra_boards + DDS;
+                            menghitung target biner matches_par_contract (par DDS vs target_base)
+                            dan mengeluarkan 8 kolom par DDS dari feature_columns.json
+                            (leakage) — lihat "Status Proyek" 2026-09-18
   models/
     base.py                BaseModel ABC
     random_forest.py       RFModel (sklearn, class_weight=balanced)
@@ -560,17 +737,20 @@ src/
   evaluation/
     metrics.py             evaluate(), compare_models(), save_results()
 
-notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; re-run penuh 2026-08-27)
-  01_data_extraction.ipynb    Parsing LIN+PBN + DDS → dataset CSV (data/processed/), 182 fitur
-  02_eda_features.ipynb       EDA & dokumentasi 182 fitur
-  03_modeling.ipynb           Training RF/XGBoost/LightGBM (hyperparameter dari configs/config.yaml)
-  04_evaluation.ipynb         Evaluasi final, SHAP, radar
+notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; target biner
+                               matches_par_contract sejak 2026-09-18; re-run penuh 2026-09-18)
+  01_data_extraction.ipynb    Parsing LIN+PBN + DDS → dataset CSV (data/processed/),
+                               target_col='matches_par_contract'
+  02_eda_features.ipynb       EDA matches_par_contract & dokumentasi 174 fitur model
+  03_modeling.ipynb           Ablasi fitur trik DD (1b) + training RF/XGBoost/LightGBM
+                               (hyperparameter dari configs/config.yaml)
+  04_evaluation.ipynb         Evaluasi final (matches_par_contract), SHAP, radar
   05_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning hyperparameter + class weighting model tunggal)
   06_final_evaluation.ipynb   Laporan komprehensif 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
 
-notebooks_dds/                 ARSIP historis — identik dengan notebooks/ sebelum
-                               konsolidasi 2026-07-17. TIDAK dieksekusi ulang; kini
-                               berbeda dari notebooks/ (belum punya promosi XGBoost 2026-08-27)
+notebooks_dds/                 ARSIP historis — skema 36-kelas lama (sebelum konsolidasi
+                               2026-07-17 dan sebelum perubahan target biner 2026-09-18).
+                               TIDAK dieksekusi ulang.
 
 scripts/
   run_pipeline.py             Pipeline lengkap: parse → train → eval — BELUM diupdate
@@ -590,7 +770,8 @@ docs/
 configs/config.yaml           Hyperparameter + path (sumber kebenaran)
 data/raw/                     606 file .lin (BBO) — tidak di-git
 data/raw_pbn/                 1.390 file .pbn (non-BBO) — tidak di-git
-data/processed/               CSV split + artefak encoder, 182 fitur/49.755 board — tidak di-git
+data/processed/               CSV split + artefak encoder, 174 fitur model/49.755 board,
+                               target matches_par_contract (biner) — tidak di-git
 outputs/models/               Model tersimpan .pkl — tidak di-git
 outputs/results/               PNG visualisasi + JSON hasil — tidak di-git
 ```
@@ -601,29 +782,43 @@ outputs/results/               PNG visualisasi + JSON hasil — tidak di-git
 
 ```
 1. LINParser.parse_directory("data/raw/")  →  list[BoardRecord]
-2. extract_features(board)                 →  dict (164 fitur + metadata + 3 target)
-3. build_dataset()                         →  deduplicate, encode label, split 70/15/15
-                                               (group-aware: dikelompokkan per papan
-                                               fisik _source_file+_board_number, supaya
-                                               pasangan open/closed-room BBO — kartu
-                                               identik — tidak terpecah lintas split)
+2. extract_features(board)                 →  dict (164 fitur + metadata + 3 target lama)
+2b. compute_dds_features() + merge         →  +18 kolom DDS; matches_par_contract dihitung dari
+                                               dd_par_level/dd_par_denom vs target_base
+3. build_dataset()                         →  deduplicate, encode label (matches_par_contract),
+                                               split 70/15/15 (group-aware: dikelompokkan
+                                               per papan fisik _source_file+_board_number,
+                                               supaya pasangan open/closed-room BBO —
+                                               kartu identik — tidak terpecah lintas split);
+                                               8 kolom par DDS dikeluarkan dari
+                                               feature_columns.json (leakage)
 4. Model.fit(X_train, y_train)
-5. evaluate(y_true, y_pred, y_proba, le)   →  dict metrik
+5. evaluate(y_true, y_pred, y_proba, le)   →  dict metrik (accuracy, F1, ROC-AUC, PR-AUC)
 ```
 
 Semua parameter (path, hyperparameter, seed) diambil dari `configs/config.yaml`.
 
 ---
 
-## Kelompok Fitur (164 total)
+## Kelompok Fitur (174 total, model resmi sejak 2026-09-18)
 
 | Kelompok | Prefix | Jml | Keterangan |
 |----------|--------|-----|------------|
 | Per-seat hand | `N_`, `E_`, `S_`, `W_` | 96 | HCP total, HCP per suit, panjang suit, stopper, controls, LTC, balanced, void/singleton/doubleton, longest suit |
 | Partnership | `ns_`, `ew_` | 44 | HCP gabungan, LTC, fit per suit, has_fit (≥8), best suit, NT stoppers, both_balanced |
-| HCP advantage | `hcp_ns_advantage` | 1 | `ns_hcp − ew_hcp` |
+| HCP advantage | `ns_hcp_advantage` | 1 | `ns_hcp − ew_hcp` |
 | Deal context | `dealer_`, `vuln_` | 8 | dealer one-hot ×4, vulnerability one-hot ×4 |
 | Auction | `auction_`, `opening_` | 15 | panjang lelang, competitive, ns/ew bid count, doubled, opening level/strain, alerts |
+| Double-Dummy (trik) | `ns_dd_*`, `ew_dd_*` | 10 | trik double-dummy per strain (S/H/D/C/N) untuk NS & EW — divalidasi lewat ablasi (`notebooks/03`), naik F1 macro val +4.21pp vs tanpanya |
+
+164 fitur di atas (tanpa baris DDS) = **164 fitur kanonik**. Total dengan
+trik DD = **174 fitur model**.
+
+**Dikeluarkan dari fitur model (leakage, bukan karena tidak berguna)**: 8
+kolom par DDS — `dd_par_level`, `dd_par_denom_S/H/D/C/N`, `dd_par_score`,
+`dd_par_declarer_is_ns` — karena jadi bahan langsung pembentuk label
+`matches_par_contract`. Tetap tersimpan di `data/processed/*.csv` untuk analisis,
+dikeluarkan dari `feature_columns.json`.
 
 Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 `_board_number`, `_source_file`, `_room`, `_declarer`, `_result`, `_tricks_made`
@@ -634,36 +829,43 @@ Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 
 | Kolom | Kelas | Keterangan |
 |-------|-------|------------|
-| `target_base` | 36 | **Primary.** "PASS" atau "{level}{strain}" misal "3N", "4S" |
-| `target` | ≤66 | Termasuk "x"/"xx" untuk doubled/redoubled |
-| `target_category` | 5 | Pass / Partscore / Game / SmallSlam / GrandSlam |
+| `matches_par_contract` | 2 | **Primary (sejak 2026-09-18).** 1 jika level+strain `target_base` == level+strain kontrak par DDS, 0 jika tidak. Dihitung di `build_dataset()`. |
+| `target_base` | 36 | Historis (target utama sebelum 2026-09-18). "PASS" atau "{level}{strain}" misal "3N", "4S". Tetap tersimpan di CSV, dipakai untuk menghitung `matches_par_contract`. |
+| `target` | ≤66 | Historis. Termasuk "x"/"xx" untuk doubled/redoubled |
+| `target_category` | 5 | Historis. Pass / Partscore / Game / SmallSlam / GrandSlam |
 
 ---
 
 ## Hasil Final
 
-*(test set, `notebooks/04_evaluation.ipynb`, konsolidasi 2026-07-17 +
-promosi XGBoost 2026-08-27 — 606 file `.lin` + 1.390 file `.pbn` /
-**49.755 papan** / **182 fitur** (164 kanonik + 18 DDS) / 36 kelas, split
-**group-aware**. Superseded angka 164-fitur/10.223-papan sebelumnya — lihat
-"Status Proyek" di atas)*
+*(test set, `notebooks/04_evaluation.ipynb`, target biner `matches_par_contract` sejak
+2026-09-18 — 606 file `.lin` + 1.390 file `.pbn` / **49.755 papan** /
+**174 fitur** (164 kanonik + 10 trik DD) / 2 kelas, split **group-aware**.
+Superseded angka 36-kelas sebelumnya — lihat "Status Proyek" di atas)*
 
-| Model | Accuracy | Top-3 | Top-5 | F1 Macro | F1 Weighted |
-|-------|----------|-------|-------|----------|-------------|
-| RandomForest | 46.8% | 77.1% | 87.4% | 0.325 | 0.485 |
-| **XGBoost** | **57.5%** | **82.6%** | **90.5%** | 0.390 | 0.554 |
-| **LightGBM** | 56.4% | 82.1% | 89.7% | **0.410** | **0.557** |
+**Baseline resmi** (hyperparameter `configs/config.yaml` apa adanya):
 
-LightGBM (`class_weight="balanced"`) unggul di F1 macro/F1 weighted dan
-**tetap model utama proyek** (prioritas F1 macro karena class imbalance
-ekstrem); XGBoost (default `configs/config.yaml`, dipromosikan 2026-08-27
-menggantikan hyperparameter "acc-tuned" usang) unggul di accuracy/top-3/top-5.
-Sumber: `outputs/results/test_comparison.csv`. Riwayat lengkap kenaikan
-bertahap (52.1% → 56.4% F1w, lewat penambahan DDS + data non-BBO PBN +
-`class_weight`) ada di "Status Proyek" di atas dan
-`experiments/2026-07-15/README.md`. Perbandingan 8 kandidat model tunggal
-(retuning hyperparameter + class weighting) di skala 49.755-board ada di
-`notebooks/05_improvement_experiments.ipynb` + `06_final_evaluation.ipynb`.
+| Model | Accuracy | F1 Macro | F1 Weighted | ROC-AUC | PR-AUC |
+|-------|----------|----------|-------------|---------|--------|
+| RandomForest | 80.8% | 0.736 | 0.805 | 0.800 | 0.634 |
+| XGBoost | 81.0% | 0.691 | 0.786 | 0.800 | 0.634 |
+| **LightGBM** | 79.9% | **0.741** | 0.802 | **0.814** | 0.658 |
+
+Baseline mayoritas (selalu tebak "tidak optimal", 74.8% dari test set) =
+74.8% accuracy — semua model mengungguli, dan F1 macro menegaskan mereka
+membedakan kedua kelas secara nyata, bukan sekadar menebak mayoritas.
+
+**Kandidat terbaik notebook 05/06 (retuning, belum dipromosikan ke
+baseline resmi)**: **XGBoost Eksperimen F (soft-balanced, `sample_weight`
+parsial α=0.25)** — Accuracy 82.3%, F1 Macro **0.750**, F1 Weighted 0.817,
+ROC-AUC 0.818 — unggul di F1 macro DAN nyaris tertinggi di accuracy (0.2pp
+di bawah Exp A) sekaligus, beda dari era 36-kelas yang trade-off-nya lebih
+tajam. Perbandingan lengkap 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
+ada di `outputs/results/nb06_final_comparison.csv`.
+
+Sumber: `outputs/results/test_comparison.csv` (3 baseline),
+`nb06_final_comparison.csv` (8 kandidat). Definisi label, keputusan
+anti-leakage, dan hasil ablasi fitur trik-DD ada di "Status Proyek" di atas.
 
 ---
 
@@ -690,6 +892,7 @@ bertahap (52.1% → 56.4% F1w, lewat penambahan DDS + data non-BBO PBN +
 | Token handling di `lin_parser.py` | Divalidasi pada 10.223 board (506 file) tanpa error parsing |
 | Random seed `42` | Hasil dalam notebook bergantung pada split ini |
 | Urutan kolom fitur | Model .pkl terserialisasi dengan urutan ini |
-| `target_base` sebagai target utama | Semua model dilatih dan dievaluasi di atas ini |
+| `matches_par_contract` sebagai target utama (sejak 2026-09-18) | Semua model dilatih dan dievaluasi di atas ini; `target_base` tetap perlu ada di CSV karena `matches_par_contract` dihitung darinya |
+| 8 kolom par DDS dikeluarkan dari `feature_columns.json` | Kolom itu jadi bahan langsung label `matches_par_contract` — memasukkannya sebagai fitur = leakage |
 | Rasio split 70/15/15 | Digunakan di semua perbandingan model |
 | Split group-aware (`StratifiedGroupKFold` per `_source_file`+`_board_number`) | Mencegah pasangan open/closed-room BBO (kartu identik) terpecah lintas train/val/test — lihat "Status Proyek" |

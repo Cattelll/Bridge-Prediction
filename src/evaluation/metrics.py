@@ -1,8 +1,9 @@
 """
-Evaluation metrics for bridge contract prediction.
+Evaluation metrics for the binary "matches_par_contract" contract prediction task.
 
-Computes: accuracy, precision, recall, F1 (macro),
-          top-k accuracy, per-class report, confusion matrix.
+Computes: accuracy, precision/recall/F1 (macro, weighted, and for the
+positive class), ROC-AUC, PR-AUC (average precision), per-class report,
+confusion matrix.
 """
 
 from __future__ import annotations
@@ -15,10 +16,11 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
     classification_report,
     confusion_matrix,
     precision_recall_fscore_support,
-    top_k_accuracy_score,
+    roc_auc_score,
 )
 from sklearn.preprocessing import LabelEncoder
 
@@ -28,24 +30,22 @@ def evaluate(
     y_pred: np.ndarray,
     y_proba: Optional[np.ndarray],
     label_encoder: LabelEncoder,
-    top_k: list[int] = [3, 5],
     model_name: str = "",
 ) -> dict:
     """
-    Compute all evaluation metrics.
+    Compute all evaluation metrics for the binary matches_par_contract target.
 
     Args:
-        y_true        : true integer labels
-        y_pred        : predicted integer labels
-        y_proba       : predicted probabilities shape (n_samples, n_classes)
-        label_encoder : fitted LabelEncoder for class names
-        top_k         : list of k values for top-k accuracy
+        y_true        : true integer labels (0/1)
+        y_pred        : predicted integer labels (0/1)
+        y_proba       : predicted probabilities shape (n_samples, 2)
+        label_encoder : fitted LabelEncoder for class names (classes_ == [0, 1])
         model_name    : used for display
 
     Returns:
         dict of metric_name -> value
     """
-    class_names = list(label_encoder.classes_)
+    class_names = [str(c) for c in label_encoder.classes_]
 
     results: dict = {"model": model_name}
 
@@ -66,17 +66,20 @@ def evaluate(
     results["recall_weighted"] = float(rec_w)
     results["f1_weighted"] = float(f1_w)
 
-    # Top-k accuracy
-    if y_proba is not None:
-        n_classes = y_proba.shape[1]
-        all_labels = list(range(n_classes))
-        for k in top_k:
-            if k < n_classes:
-                results[f"top_{k}_accuracy"] = float(
-                    top_k_accuracy_score(y_true, y_proba, k=k, labels=all_labels)
-                )
+    # Positive-class ("optimal", label 1) metrics
+    prec_pos, rec_pos, f1_pos, _ = precision_recall_fscore_support(
+        y_true, y_pred, average="binary", pos_label=1, zero_division=0
+    )
+    results["precision_positive"] = float(prec_pos)
+    results["recall_positive"] = float(rec_pos)
+    results["f1_positive"] = float(f1_pos)
 
-    # Use all possible labels so reports are consistent across splits
+    # Probability-based metrics
+    if y_proba is not None:
+        y_score = y_proba[:, 1]
+        results["roc_auc"] = float(roc_auc_score(y_true, y_score))
+        results["average_precision"] = float(average_precision_score(y_true, y_score))
+
     all_labels = list(range(len(class_names)))
     report = classification_report(
         y_true, y_pred,
@@ -106,10 +109,11 @@ def print_summary(results: dict) -> None:
     print(f"  Recall (macro)    : {results['recall_macro']:.4f}")
     print(f"  F1 (macro)        : {results['f1_macro']:.4f}")
     print(f"  F1 (weighted)     : {results['f1_weighted']:.4f}")
-    for k in [3, 5]:
-        key = f"top_{k}_accuracy"
-        if key in results:
-            print(f"  Top-{k} Accuracy    : {results[key]:.4f}")
+    print(f"  F1 (positive)     : {results['f1_positive']:.4f}")
+    if "roc_auc" in results:
+        print(f"  ROC-AUC           : {results['roc_auc']:.4f}")
+    if "average_precision" in results:
+        print(f"  PR-AUC (avg prec) : {results['average_precision']:.4f}")
     print(f"{'='*55}")
 
 
@@ -128,7 +132,7 @@ def compare_models(results_list: list[dict]) -> pd.DataFrame:
     """Build a comparison DataFrame from a list of result dicts."""
     metrics = [
         "accuracy", "precision_macro", "recall_macro", "f1_macro",
-        "f1_weighted", "top_3_accuracy", "top_5_accuracy",
+        "f1_weighted", "f1_positive", "roc_auc", "average_precision",
     ]
     rows = []
     for res in results_list:

@@ -20,11 +20,11 @@ features:
   auction_features: true
 
 # Source of truth for the official pipeline (notebooks/03_modeling.ipynb reads
-# this file directly). RF + LightGBM use class_weight="balanced" to counter the
-# extreme long-tail imbalance in target_base; XGBoost has no native class_weight
-# so it runs unweighted here (see notebooks/05 Exp B/F for the sample_weight
-# study). These XGBoost values were re-confirmed as the best config at the
-# 49,755-board / 182-feature scale (notebooks/05 Exp A, experiments/2026-07-15/08).
+# this file directly). Target is the binary `matches_par_contract` label (does
+# the bid contract match the DDS par contract's level+strain?). RF + LightGBM
+# use class_weight="balanced" to counter the matches_par_contract class
+# imbalance; XGBoost has no native class_weight so it runs unweighted here
+# (see notebooks/05 Exp B/F for the sample_weight study).
 models:
   random_forest:
     n_estimators: 300
@@ -60,7 +60,8 @@ evaluation:
     - precision_macro
     - recall_macro
     - f1_macro
-  top_k: [3, 5]
+    - roc_auc
+    - average_precision
   confusion_matrix: true
   feature_importance: true
   shap: true
