@@ -40,7 +40,7 @@ _TARGET_COLS = {"target", "target_base", "target_category", "matches_par_contrac
 _LEAKAGE_COLS = {
     "dd_par_level", "dd_par_score", "dd_par_declarer_is_ns",
     "dd_par_denom_S", "dd_par_denom_H", "dd_par_denom_D",
-    "dd_par_denom_C", "dd_par_denom_N",
+    "dd_par_denom_C", "dd_par_denom_N", "dd_par_contracts",
 }
 
 
@@ -176,18 +176,26 @@ def build_dataset(
 
         print(f"      DDS fitur ditambahkan: {len(dds_feature_cols)}")
 
-        # matches_par_contract: does target_base's level+strain match the DDS
-        # par contract's level+strain? Built here (not in src/features/dds.py)
-        # from the columns just merged above.
-        from src.features.dds import STRAINS
+        # matches_par_contract: is the actual contract one of the DDS par
+        # contracts — same level, strain, doubled/redoubled status AND
+        # declarer side (NS/EW)? A board can have several equally-scoring
+        # par contracts (dd_par_contracts, "|"-separated); matching any of
+        # them counts. Built here (not in src/features/dds.py) from the
+        # columns just merged above.
+        from src.features.dds import par_contract_key
 
-        denom_idx = df[[f"dd_par_denom_{s}" for s in STRAINS]].to_numpy().argmax(axis=1)
-        par_contract = np.where(
-            df["dd_par_level"] == 0,
-            "PASS",
-            df["dd_par_level"].astype(int).astype(str) + np.array(STRAINS)[denom_idx],
-        )
-        df["matches_par_contract"] = (df["target_base"] == par_contract).astype(int)
+        if "dd_par_contracts" not in df.columns:
+            raise ValueError(
+                "DDS cache has no 'dd_par_contracts' column (made before the "
+                "full par comparison) — rebuild it with scripts/build_dds_cache.py"
+            )
+        actual_key = [
+            par_contract_key(c, d) for c, d in zip(df["target"], df["_declarer"])
+        ]
+        df["matches_par_contract"] = [
+            int(k != "" and k in pars.split("|"))
+            for k, pars in zip(actual_key, df["dd_par_contracts"])
+        ]
         n_optimal = int(df["matches_par_contract"].sum())
         print(f"      matches_par_contract : {n_optimal}/{len(df)} board optimal "
               f"({n_optimal / len(df):.1%})")
@@ -331,6 +339,15 @@ def load_splits(
         df_train, df_val, df_test, feature_cols, label_encoder
     """
     processed_dir = Path(processed_dir)
+
+    required = ["train.csv", "val.csv", "test.csv", "feature_columns.json", "label_encoder.pkl"]
+    missing = [name for name in required if not (processed_dir / name).exists()]
+    if missing:
+        raise FileNotFoundError(
+            f"Dataset di {processed_dir} belum lengkap (tidak ada: {', '.join(missing)}). "
+            "Jalankan notebooks/01_data_extraction.ipynb sampai selesai dulu — "
+            "jangan jalankan notebook lain selagi notebook 1 sedang membangun dataset."
+        )
 
     df_train = pd.read_csv(processed_dir / "train.csv")
     df_val = pd.read_csv(processed_dir / "val.csv")
