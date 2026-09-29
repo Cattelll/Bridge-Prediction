@@ -1,161 +1,115 @@
 # Bridge Contract Prediction
 
-Penelitian perbandingan algoritma machine learning (Random Forest, XGBoost, LightGBM) untuk memprediksi kontrak optimal dalam permainan Bridge menggunakan dataset rekaman BBO LIN format.
+Penelitian skripsi yang membandingkan tiga algoritma ensemble berbasis pohon —
+**Random Forest, XGBoost, LightGBM** — untuk memprediksi apakah kontrak yang
+dibid manusia dalam Contract Bridge **sama dengan kontrak par** menurut
+Double-Dummy Solver.
 
 ## Latar Belakang
 
-Contract Bridge adalah permainan kartu yang melibatkan proses bidding (lelang) untuk menentukan kontrak — level dan jenis suit yang akan dimainkan. Memprediksi kontrak optimal secara otomatis merupakan masalah klasifikasi multikelas dengan 35 kelas target.
+Contract Bridge adalah permainan kartu yang melibatkan proses bidding (lelang)
+untuk menentukan kontrak — level dan strain (suit/NT) yang akan dimainkan.
+Kontrak **par** adalah kontrak "ideal" jika keempat tangan terbuka, dihitung
+dengan Double-Dummy Solver (`endplay`).
 
-Dataset canonical (164-fitur) berasal dari **506 file .lin** BBO (Bridge Base Online), menghasilkan **10.223 papan** setelah pembersihan & deduplikasi (35 kelas kontrak, 164 fitur). Lihat bagian "data tambahan" di bawah untuk pipeline gabungan LIN+PBN 182-fitur yang jauh lebih besar (49.755 papan).
+**Target (sejak 2026-09-18): `matches_par_contract` — klasifikasi biner.**
+Nilainya 1 jika kontrak yang benar-benar dibid cocok dengan **salah satu**
+kontrak par DDS pada level, strain, status doubled/redoubled, dan sisi
+declarer (NS/EW); 0 jika tidak (definisi diperketat 2026-09-27 — sebelumnya
+hanya level+strain terhadap kontrak par pertama).
+Sebelumnya proyek ini memakai target 36 kelas (`target_base`, mis. `"4S"`,
+`"3N"`, `"PASS"`) — kolom itu tetap tersimpan di CSV sebagai data historis.
 
-## Hasil
+## Dataset
 
-*(test set, retrain 2026-07-09 pada dataset 506 file / 10.223 papan, `n_estimators=300`
-di ketiga model, split **group-aware** — lihat catatan metodologi di bawah)*
+| Item | Nilai |
+|---|---|
+| Sumber | 606 file `.lin` (BBO vugraph) + 1.390 file `.pbn` (kejuaraan dunia via computerbridge.se, tistis.nl, arsip angelfire.com lewat Wayback Machine) |
+| Board (setelah dedup & pembersihan) | **49.755** |
+| Split train / val / test | 70/15/15 **group-aware** (34.829 / 7.462 / 7.464) |
+| Fitur model | **174** (164 kanonik + 10 trik double-dummy per strain) |
+| Distribusi target | 24,3% cocok par / 75,7% tidak |
+| Random seed | 42 |
 
-| Model | Accuracy | Top-3 Acc | Top-5 Acc | F1 Macro | F1 Weighted |
-|-------|----------|-----------|-----------|----------|-------------|
-| Random Forest | 44.9% | 71.8% | 82.0% | 0.278 | 0.465 |
-| **XGBoost** | **52.1%** | **76.3%** | **85.1%** | **0.290** | **0.481** |
-| LightGBM | 51.7% | 74.6% | 84.0% | 0.279 | 0.467 |
+- **Split group-aware**: BBO vugraph mencatat tiap papan dua kali (open/closed
+  room, kartu identik). Split dikelompokkan per papan fisik
+  (`StratifiedGroupKFold` pada `_source_file`+`_board_number`) supaya
+  pasangan itu tidak terpecah lintas split — mencegah kebocoran data.
+- **Anti-leakage**: 8 kolom par DDS (`dd_par_*`) adalah bahan langsung label,
+  jadi dikeluarkan dari fitur model (tetap ada di CSV untuk analisis).
+- **Fitur trik DD** (`ns_dd_*`/`ew_dd_*`) dipertahankan setelah ablasi:
+  +5,40pp F1 macro di validation set dibanding 164 fitur kanonik saja.
 
-> XGBoost unggul di semua metrik kali ini (accuracy, top-k, F1 macro, F1 weighted).
-> Lihat [docs/SUMMARY.md](docs/SUMMARY.md) untuk ringkasan lengkap & [outputs/results/REPORT.md](outputs/results/REPORT.md) untuk hasil mentah.
+## Hasil (test set)
 
-> **Catatan metodologi (2026-07-09)**: split train/val/test sebelumnya memakai
-> `train_test_split` acak biasa. BBO vugraph mencatat tiap papan dua kali
-> ("open room"/"closed room" — dua pasangan membidik kartu yang **sama persis**),
-> dan ~46% pasangan itu ternyata terpecah ke split berbeda, sehingga ~60% baris
-> val/test punya "kembaran" tangan identik di train — kebocoran data yang
-> membuat sebagian akurasi berasal dari hafalan pasangan, bukan generalisasi.
-> Split sekarang **group-aware** (`StratifiedGroupKFold` dikelompokkan per
-> papan fisik, `src/preprocessing/dataset_builder.py`) — pasangan open/closed
-> room selalu berada di split yang sama. Angka di atas sudah memakai split
-> yang diperbaiki; perubahannya kecil (±1-2pp) karena efek kebocorannya
-> sebagian saling meniadakan secara agregat, tapi metodologinya sekarang
-> defensible. Detail investigasi & angka before/after di
-> [experiments/2026-07-09/README.md](experiments/2026-07-09/README.md).
+**Baseline resmi** (hyperparameter `configs/config.yaml`):
 
-## Hasil (opsional): + Double-Dummy Solver + data gabungan (pipeline `notebooks_dds/`)
+| Model | Accuracy | F1 Macro | F1 Weighted | ROC-AUC | PR-AUC |
+|-------|----------|----------|-------------|---------|--------|
+| Random Forest | 82,3% | 0,754 | **0,821** | 0,823 | 0,667 |
+| XGBoost | **83,0%** | 0,729 | 0,814 | 0,831 | 0,677 |
+| **LightGBM** | 81,5% | **0,761** | 0,819 | **0,845** | **0,702** |
 
-Fitur Double-Dummy Solver (DDS) — di luar 164 fitur kanonik, disetujui
-masuk sebagai **fitur tambahan opsional** 2026-07-15 (lihat `CLAUDE.md`)
-setelah ditemukan bahwa akurasi sudah mendekati batas konsistensi
-bidding manusia sendiri (lihat [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md)).
-Pipeline paralel lengkap di [`notebooks_dds/`](notebooks_dds/) & `data/processed_dds/`
-(182 fitur = 164 kanonik + 18 DDS), tidak menggantikan pipeline utama di atas.
+**Kandidat terbaik hasil retuning** (`notebooks/05`–`06`, belum dipromosikan
+ke baseline): **XGBoost Eksperimen F** (`sample_weight` parsial α=0,5) —
+accuracy **84,7%**, F1 macro **0,782**, F1 weighted **0,843**, ROC-AUC 0,849.
 
-**2026-07-16 (lanjutan)**: pipeline diperluas lagi dengan 1.178 file PBN baru
-dari arsip `angelfire.com` (mati, direcover via Wayback Machine — 57 arsip
-kejuaraan dunia 1996-2002: Bermuda Bowl, Venice Cup, Vanderbilt, World
-Bridge Team Olympiad, Cap Gemini, Cavendish, Dutch Teams Final, dll.).
-Data gabungan sekarang **606 file .lin + 1.390 file .pbn = 49.755 board,
-36 kelas** (naik dari 21.675, +130%). Hasil test set terbaru (notebook
-01→04 dieksekusi penuh):
+Pembanding: selalu menebak "tidak cocok" = 75,7% accuracy. Semua model
+mengunggulinya, dan ROC-AUC ~0,82–0,85 (bukan mendekati 1,0) menunjukkan
+tidak ada tanda leakage residual.
 
-| Model | Accuracy | F1 Macro | F1 Weighted |
-|-------|----------|----------|-------------|
-| Random Forest | 46.8% | 0.325 | 0.485 |
-| XGBoost (hyperparameter di-tune untuk 182 fitur) | 56.1% | 0.342 | 0.532 |
-| **LightGBM (class_weight="balanced")** | **56.4%** | **0.410** | **0.557** |
-
-LightGBM unggul di SEMUA metrik dan merupakan model yang direkomendasikan
-untuk pipeline `notebooks_dds/`. Data lebih banyak terbukti sangat efektif
-menaikkan akurasi — F1 macro naik +6.1pp (~17.5% relatif) dari penambahan
-data ini saja. Perbandingan terhadap baseline 164-fitur di tabel utama.
-
-## Hasil (opsional): + data tambahan (non-BBO PBN + file baru)
-
-`data/raw/` diperluas dari 506 → 606 file .lin, ditambah **212 file PBN**
-dari sumber non-BBO: 7 final kejuaraan dunia via `computerbridge.se`
-(Bermuda Bowl, Venice Cup, Vanderbilt, Spingold, dll., 43 file) dan
-turnamen internasional lama via `tistis.nl` (ETC97/99, EYC98/00, IWBC,
-OKB, Papi Garozzo, 169 file) — semua diverifikasi bebas kontaminasi
-bidding komputer/bot sebelum dipakai (bukan dari scraping BBO, yang
-ToS-nya eksplisit melarang automation/scraping). Dataset gabungan di
-`data/processed_combined/` (182 fitur, **21.675 board** total, 36 kelas,
-group-aware split):
-
-| Model | Accuracy | F1 Macro | F1 Weighted |
-|-------|----------|----------|-------------|
-| XGBoost acc-tuned | 54.1% | 0.294 | 0.504 |
-| **LightGBM + class_weight** | **54.3%** | **0.349** | **0.519** |
-
-**LightGBM + class_weight di data gabungan adalah kandidat terbaik
-proyek secara keseluruhan** — accuracy tertinggi DAN F1 macro/weighted
-terbaik sekaligus, tanpa trade-off yang biasanya ada. Detail lengkap &
-narasi akuisisi data di
-[experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb](experiments/2026-07-15/06_combined_data_v2_more_pbn.ipynb)
-dan [experiments/2026-07-15/README.md](experiments/2026-07-15/README.md).
+Laporan lengkap 8 kandidat: [outputs/results/REPORT.md](outputs/results/REPORT.md)
+(generate ulang dengan `python scripts/report.py`).
 
 ## Struktur Proyek
 
 ```
 Bridge-Prediction/
 ├── src/
-│   ├── parser/          # LIN parser (BBO format)
-│   ├── features/        # Feature engineering (164 fitur)
-│   ├── preprocessing/   # Dataset builder & split
+│   ├── parser/          # LINParser (BBO) + PBNParser
+│   ├── features/        # engineer.py (164 fitur kanonik), dds.py (18 kolom DDS)
+│   ├── preprocessing/   # build_dataset(): label matches_par_contract, dedup, split
 │   ├── models/          # RF, XGBoost, LightGBM wrappers
-│   └── evaluation/      # Metrics, confusion matrix, SHAP
-├── notebooks/
-│   ├── 01_data_extraction.ipynb    # Data extraction: parsing LIN → dataset CSV
-│   ├── 02_eda_features.ipynb       # EDA & feature engineering (164 fitur)
-│   ├── 03_modeling.ipynb           # Training & learning curve
-│   └── 04_evaluation.ipynb         # Evaluasi final, SHAP, radar
-├── scripts/
-│   ├── run_pipeline.py             # Pipeline lengkap (parse → train → eval)
-│   ├── validate_parser.py          # Validasi parser LIN
-│   └── validate_features.py        # Validasi fitur
-├── configs/config.yaml             # Konfigurasi hyperparameter
-├── data/
-│   ├── raw/             # File .lin BBO (tidak di-track git)
-│   └── processed/       # CSV split train/val/test (tidak di-track git)
-└── outputs/
-    ├── models/          # Model tersimpan (.pkl)
-    └── results/         # Visualisasi output (.png)
+│   └── evaluation/      # accuracy, F1, ROC-AUC, PR-AUC, SHAP
+├── notebooks/           # Pipeline resmi, jalankan berurutan 01 → 06
+│   ├── 01_data_extraction.ipynb          # Parsing LIN+PBN + DDS → CSV
+│   ├── 02_eda_features.ipynb             # EDA target & 174 fitur
+│   ├── 03_modeling.ipynb                 # Ablasi fitur DD + training 3 model
+│   ├── 04_evaluation.ipynb               # Evaluasi test set, SHAP, radar
+│   ├── 05_improvement_experiments.ipynb  # Exp A/B/C/E/F (retuning, bobot kelas)
+│   └── 06_final_evaluation.ipynb         # Laporan 8 kandidat
+├── experiments/         # Arsip eksperimen era 36 kelas
+├── scripts/             # report.py, validate_parser.py, validate_features.py
+├── configs/config.yaml  # Hyperparameter & path (sumber kebenaran)
+├── data/                # raw/ (.lin), raw_pbn/ (.pbn), processed/ — tidak di-git
+└── outputs/             # models/ (.pkl), results/ (PNG/JSON/CSV) — tidak di-git
 ```
 
-## Fitur (164 total)
+## Fitur (174 total)
 
 | Kelompok | Jumlah | Keterangan |
 |----------|--------|------------|
-| Per-seat (N/E/S/W) | 96 | HCP, panjang suit, stopper, kontrol, LTC, balanced |
+| Per-seat (N/E/S/W) | 96 | HCP, panjang suit, stopper, kontrol, LTC, balanced, suit terpanjang |
 | Partnership (NS/EW) | 44 | HCP gabungan, fit, best suit, NT stopper |
-| HCP advantage | 1 | Selisih HCP NS vs EW |
+| HCP advantage | 1 | `ns_hcp_advantage` = HCP NS − HCP EW |
 | Deal context | 8 | Dealer (one-hot 4), vulnerability (one-hot 4) |
 | Auction | 15 | Panjang lelang, kompetitif, opening level/strain, alert |
+| Double-dummy (trik) | 10 | Trik DD per strain (S/H/D/C/N) untuk NS & EW |
 
 ## Instalasi
 
 ```powershell
-# Clone repo
 git clone <repo-url>
 cd Bridge-Prediction
 
-# Install dependencies (gunakan Python 3.12 sistem)
+# Python 3.12; endplay (DDS) termasuk dependency wajib
 pip install -e ".[notebook,dev]"
-# atau jika pyproject.toml belum ada di working tree:
-pip install -r requirements.txt
 
 # Daftarkan Jupyter kernel
 python -m ipykernel install --user --name bridge --display-name "Python 3.12 (Bridge)"
 ```
 
-> **Catatan:** `pyproject.toml` saat ini terhapus di working tree lokal (unstaged) —
-> gunakan `requirements.txt` sebagai fallback sampai ini diselesaikan.
->
-> Virtual environment `.venv` mungkin diblokir oleh Windows Application
-> Control. Gunakan Python sistem secara langsung. Pilih kernel
-> **"Python 3.12 (Bridge)"** di Jupyter.
-
 ## Penggunaan
-
-### Jalankan pipeline lengkap
-
-```bash
-python scripts/run_pipeline.py
-```
 
 ### Jalankan notebook secara berurutan
 
@@ -164,7 +118,14 @@ jupyter nbconvert --to notebook --execute --inplace notebooks/01_data_extraction
 jupyter nbconvert --to notebook --execute --inplace notebooks/02_eda_features.ipynb
 jupyter nbconvert --to notebook --execute --inplace notebooks/03_modeling.ipynb
 jupyter nbconvert --to notebook --execute --inplace notebooks/04_evaluation.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/05_improvement_experiments.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/06_final_evaluation.ipynb
+python scripts/report.py
 ```
+
+> ⚠️ **Jangan jalankan `scripts/run_pipeline.py`** — skrip itu belum diupdate
+> dan masih membangun pipeline lama (LIN-only, 164 fitur, 36 kelas). Menjalankannya
+> akan menimpa `data/processed/` dan `outputs/models/` ke versi usang.
 
 ### Validasi parser
 
@@ -173,9 +134,9 @@ python scripts/validate_parser.py
 python scripts/validate_features.py
 ```
 
-## Format Data (BBO LIN)
+## Format Data
 
-File `.lin` adalah format rekaman permainan Bridge dari Bridge Base Online:
+**BBO LIN** — rekaman permainan dari Bridge Base Online:
 
 ```
 vg|tournament_name,...|
@@ -187,18 +148,27 @@ pc|S3|pc|S5|pc|S8|pc|SA|mc|10|
 Token utama: `vg` (info turnamen), `md` (distribusi kartu), `sv` (vulnerability),
 `mb` (bid), `pc` (kartu dimainkan), `mc` (jumlah trick).
 
+**PBN** (Portable Bridge Notation) — format standar berbasis tag
+(`[Deal "..."]`, `[Auction "..."]`, dst.), di-parse `PBNParser` menjadi
+`BoardRecord` yang sama dengan LIN.
+
 ## Lingkungan
 
 - Python 3.12
-- scikit-learn ≥ 1.4, xgboost ≥ 2.0, lightgbm ≥ 4.0
+- scikit-learn ≥ 1.4, xgboost ≥ 2.0, lightgbm ≥ 4.0, endplay (DDS)
 - shap ≥ 0.45, matplotlib ≥ 3.8, pandas ≥ 2.1
 
 ## Dokumentasi Tambahan
 
-- [docs/SUMMARY.md](docs/SUMMARY.md) — ringkasan proyek satu halaman (tujuan, metode, hasil, temuan)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — alur pipeline, tanggung jawab tiap modul, keputusan desain
-- [docs/FEATURES.md](docs/FEATURES.md) — data dictionary lengkap 164 fitur
+- [docs/RESUME.md](docs/RESUME.md) — ringkasan dari semua dokumen ringkasan proyek
+- [docs/SUMMARY.md](docs/SUMMARY.md) — ringkasan proyek satu halaman
+- [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) — alur tiap eksperimen (ablasi, Exp A/B/C/E/F)
+- [docs/ALGORITHMS.md](docs/ALGORITHMS.md) — cara kerja RF vs XGBoost vs LightGBM
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — alur pipeline & tanggung jawab modul
+- [docs/FEATURES.md](docs/FEATURES.md) — data dictionary fitur kanonik
+- [CLAUDE.md](CLAUDE.md) — riwayat lengkap keputusan & invariant proyek
 
 ## Lisensi
 
-Untuk keperluan penelitian/skripsi. Dataset BBO LIN bersifat publik dari Bridge Base Online.
+Untuk keperluan penelitian/skripsi. Data BBO LIN bersumber dari Bridge Base
+Online; data PBN dari arsip kejuaraan publik non-komersial.

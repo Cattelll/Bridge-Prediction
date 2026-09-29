@@ -1,8 +1,11 @@
 """
 Generate a summary report from saved evaluation results.
 
-Reads:  outputs/results/nb04_summary.json  (from notebook 04)
-        outputs/results/test_comparison.csv (from run_pipeline.py)
+Reads:  outputs/results/nb04_summary.json        (notebook 04 — 3 baseline resmi)
+        outputs/results/nb06_final_comparison.csv (notebook 06 — 8 kandidat)
+
+Target biner `matches_par_contract` (sejak 2026-09-18): metrik yang
+dilaporkan accuracy, F1 macro/weighted/positif, ROC-AUC, PR-AUC.
 
 Output: prints to stdout + saves outputs/results/REPORT.md
 
@@ -17,7 +20,17 @@ from pathlib import Path
 ROOT        = Path(__file__).parent.parent
 RESULTS_DIR = ROOT / "outputs" / "results"
 SUMMARY_JSON = RESULTS_DIR / "nb04_summary.json"
-TEST_CSV     = RESULTS_DIR / "test_comparison.csv"
+NB06_CSV     = RESULTS_DIR / "nb06_final_comparison.csv"
+
+# (kunci, judul kolom) metrik biner yang dilaporkan
+METRICS = [
+    ("accuracy",          "Accuracy"),
+    ("f1_macro",          "F1 Macro"),
+    ("f1_weighted",       "F1 Weighted"),
+    ("f1_positive",       "F1 Positif"),
+    ("roc_auc",           "ROC-AUC"),
+    ("average_precision", "PR-AUC"),
+]
 REPORT_PATH  = RESULTS_DIR / "REPORT.md"
 
 
@@ -27,12 +40,47 @@ def _load_summary() -> dict | None:
     return None
 
 
-def _load_test_csv() -> list[dict] | None:
-    if not TEST_CSV.exists():
+def _load_csv(path: Path) -> list[dict] | None:
+    if not path.exists():
         return None
     import csv
-    with open(TEST_CSV, newline="") as f:
+    with open(path, newline="") as f:
         return list(csv.DictReader(f))
+
+
+def _metric_table(results: list[dict]) -> list[str]:
+    lines = [
+        "| Model | " + " | ".join(t for _, t in METRICS) + " |",
+        "|-------|" + "|".join("-" * (len(t) + 2) for _, t in METRICS) + "|",
+    ]
+    for r in results:
+        cells = " | ".join(_fval(r.get(k, "n/a")) for k, _ in METRICS)
+        lines.append(f"| {r['model']} | {cells} |")
+    lines.append("")
+    return lines
+
+
+def _winners(results: list[dict]) -> list[str]:
+    lines = [
+        "| Metrik | Model | Nilai |",
+        "|--------|-------|-------|",
+    ]
+    for key, title in METRICS:
+        scored = [r for r in results if _is_num(r.get(key))]
+        if not scored:
+            continue
+        best = max(scored, key=lambda r: float(r[key]))
+        lines.append(f"| {title} | **{best['model']}** | {_fval(best[key])} |")
+    lines.append("")
+    return lines
+
+
+def _is_num(v) -> bool:
+    try:
+        float(v)
+        return True
+    except (ValueError, TypeError):
+        return False
 
 
 def _individual_jsons() -> list[dict]:
@@ -83,10 +131,16 @@ def build_report() -> str:
             f"|------|-------|",
             f"| Total board (setelah dedup) | {d['n_total']:,} |",
             f"| Train / Val / Test | {d['n_train']:,} / {d['n_val']:,} / {d['n_test']:,} |",
-            f"| Kelas kontrak | {d['n_classes']} |",
+            f"| Target | `matches_par_contract` (biner, {d['n_classes']} kelas) |",
             f"| Fitur | {d['n_features']} |",
-            f"",
         ]
+        rate = d.get("matches_par_contract_rate_test")
+        if rate is not None:
+            lines += [
+                f"| Kelas positif di test set | {rate:.1%} "
+                f"(baseline mayoritas = {1 - rate:.1%} accuracy) |",
+            ]
+        lines.append("")
     else:
         lines += ["## Dataset\n\n*Data tidak tersedia — jalankan notebook 04 terlebih dahulu.*\n"]
 
@@ -98,41 +152,26 @@ def build_report() -> str:
         results = _individual_jsons()
 
     if not results:
-        lines += ["## Hasil Test Set\n\n*Belum ada — jalankan `run_pipeline.py` atau notebook 04.*\n"]
+        lines += ["## Hasil Test Set\n\n*Belum ada — jalankan notebook 04.*\n"]
     else:
-        lines += [
-            "## Hasil Test Set",
-            "",
-            "| Model | Accuracy | F1 Macro | F1 Weighted | Top-3 | Top-5 |",
-            "|-------|----------|----------|-------------|-------|-------|",
-        ]
-        for r in results:
-            lines.append(
-                f"| {r['model']} "
-                f"| {_fval(r.get('accuracy', 'n/a'))} "
-                f"| {_fval(r.get('f1_macro', 'n/a'))} "
-                f"| {_fval(r.get('f1_weighted', 'n/a'))} "
-                f"| {_fval(r.get('top_3_accuracy', 'n/a'))} "
-                f"| {_fval(r.get('top_5_accuracy', 'n/a'))} |"
-            )
-        lines.append("")
+        lines += ["## Hasil Test Set — Baseline Resmi", ""]
+        lines += _metric_table(results)
+        lines += ["### Pemenang per Metrik (baseline)", ""]
+        lines += _winners(results)
 
-        best_acc = max(results, key=lambda r: float(r.get("accuracy", 0)))
-        best_f1m = max(results, key=lambda r: float(r.get("f1_macro", 0)))
-        best_f1w = max(results, key=lambda r: float(r.get("f1_weighted", 0)))
-        best_t3  = max(results, key=lambda r: float(r.get("top_3_accuracy", 0)))
-
+    # ── Kandidat notebook 06 ──────────────────────────────────────────
+    candidates = _load_csv(NB06_CSV)
+    if candidates:
         lines += [
-            "### Pemenang per Metrik",
+            f"## Semua Kandidat — notebook 06 ({len(candidates)} model)",
             "",
-            f"| Metrik | Model | Nilai |",
-            f"|--------|-------|-------|",
-            f"| Accuracy    | **{best_acc['model']}** | {_fval(best_acc['accuracy'])} |",
-            f"| F1 Macro    | **{best_f1m['model']}** | {_fval(best_f1m['f1_macro'])} |",
-            f"| F1 Weighted | **{best_f1w['model']}** | {_fval(best_f1w['f1_weighted'])} |",
-            f"| Top-3 Acc   | **{best_t3['model']}** | {_fval(best_t3.get('top_3_accuracy', 0))} |",
+            "*Diurutkan F1 macro. Kandidat retuning (Exp A/B/C/E/F) belum "
+            "dipromosikan ke baseline resmi.*",
             "",
         ]
+        lines += _metric_table(candidates)
+        lines += ["### Pemenang per Metrik (semua kandidat)", ""]
+        lines += _winners(candidates)
 
     # ── Output files ──────────────────────────────────────────────────
     pngs = sorted(RESULTS_DIR.glob("*.png"))
@@ -167,7 +206,7 @@ def build_report() -> str:
 def main() -> None:
     if not RESULTS_DIR.exists():
         print(f"[ERROR] Direktori outputs/results/ belum ada.", file=sys.stderr)
-        print(f"        Jalankan pipeline terlebih dahulu: py -3.12 scripts/run_pipeline.py", file=sys.stderr)
+        print(f"        Jalankan notebooks/01→06 terlebih dahulu.", file=sys.stderr)
         sys.exit(1)
 
     report = build_report()
