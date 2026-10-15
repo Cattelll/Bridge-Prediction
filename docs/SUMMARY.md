@@ -7,9 +7,10 @@ dalam lihat [ARCHITECTURE.md](ARCHITECTURE.md) (alur pipeline & modul) dan
 ## Tujuan
 
 Penelitian skripsi yang membandingkan tiga algoritma ensemble berbasis pohon
-— Random Forest, XGBoost, LightGBM — untuk memprediksi apakah kontrak yang
-benar-benar dibid (auction) dalam Contract Bridge **optimal**, dari data
-hasil lelang (bidding) dan kartu, direkam dalam format BBO LIN + PBN.
+— Random Forest, XGBoost, LightGBM — sebagai **classifier biner** yang
+mengklasifikasikan apakah kontrak yang benar-benar dibid (auction) dalam
+Contract Bridge **cocok dengan kontrak par** (kelas 1) atau tidak (kelas 0),
+dari data hasil lelang (bidding) dan kartu, direkam dalam format BBO LIN + PBN.
 
 > **Perubahan arah (2026-09-18)**: target diganti dari klasifikasi 36-kelas
 > (`target_base`, mis. `"4S"`, `"3N"`, `"PASS"`) menjadi **klasifikasi biner
@@ -80,9 +81,9 @@ dan [outputs/results/nb06_final_comparison.csv](../outputs/results/nb06_final_co
 | XGBoost | **83,0%** | 0,729 | 0,814 | 0,831 | 0,677 |
 | **LightGBM** | 81,5% | **0,761** | 0,819 | **0,845** | **0,702** |
 
-Baseline mayoritas (selalu tebak "tidak cocok", 75,7% dari test set) =
+Baseline mayoritas (selalu mengklasifikasikan "tidak cocok", 75,7% dari test set) =
 75,7% accuracy — semua model mengungguli, dan F1 macro menegaskan mereka
-membedakan kedua kelas secara nyata, bukan sekadar menebak mayoritas.
+membedakan kedua kelas secara nyata, bukan sekadar mengikuti kelas mayoritas.
 ROC-AUC ~0,82–0,85 (bukan mendekati 1,0) menunjukkan tidak ada tanda
 leakage residual.
 

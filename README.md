@@ -1,9 +1,10 @@
-# Bridge Contract Prediction
+# Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
 Penelitian skripsi yang membandingkan tiga algoritma ensemble berbasis pohon —
-**Random Forest, XGBoost, LightGBM** — untuk memprediksi apakah kontrak yang
-dibid manusia dalam Contract Bridge **sama dengan kontrak par** menurut
-Double-Dummy Solver.
+**Random Forest, XGBoost, LightGBM** — sebagai **classifier biner** yang
+mengklasifikasikan apakah kontrak yang dibid manusia dalam Contract Bridge
+**cocok dengan kontrak par** menurut Double-Dummy Solver (kelas 1) atau tidak
+(kelas 0).
 
 ## Latar Belakang
 
@@ -54,7 +55,7 @@ Sebelumnya proyek ini memakai target 36 kelas (`target_base`, mis. `"4S"`,
 ke baseline): **XGBoost Eksperimen F** (`sample_weight` parsial α=0,5) —
 accuracy **84,7%**, F1 macro **0,782**, F1 weighted **0,843**, ROC-AUC 0,849.
 
-Pembanding: selalu menebak "tidak cocok" = 75,7% accuracy. Semua model
+Pembanding: selalu mengklasifikasikan "tidak cocok" = 75,7% accuracy. Semua model
 mengunggulinya, dan ROC-AUC ~0,82–0,85 (bukan mendekati 1,0) menunjukkan
 tidak ada tanda leakage residual.
 
@@ -160,6 +161,8 @@ Token utama: `vg` (info turnamen), `md` (distribusi kartu), `sv` (vulnerability)
 
 ## Dokumentasi Tambahan
 
+- [docs/TAHAPAN_PENELITIAN.md](docs/TAHAPAN_PENELITIAN.md) — tahapan penelitian
+  berdasarkan diagram alur, dari data LIN/PBN sampai analisis hasil
 - [docs/RESUME.md](docs/RESUME.md) — ringkasan dari semua dokumen ringkasan proyek
 - [docs/SUMMARY.md](docs/SUMMARY.md) — ringkasan proyek satu halaman
 - [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) — alur tiap eksperimen (ablasi, Exp A/B/C/E/F)

@@ -112,7 +112,7 @@ def build_report() -> str:
     lines: list[str] = []
 
     lines += [
-        f"# Bridge Contract Prediction – Laporan Hasil",
+        f"# Klasifikasi Kecocokan Kontrak Par pada Contract Bridge – Laporan Hasil",
         f"",
         f"*Dibuat otomatis pada {now}*",
         f"",

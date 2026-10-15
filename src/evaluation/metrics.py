@@ -1,5 +1,5 @@
 """
-Evaluation metrics for the binary "matches_par_contract" contract prediction task.
+Evaluation metrics for the binary "matches_par_contract" classification task.
 
 Computes: accuracy, precision/recall/F1 (macro, weighted, and for the
 positive class), ROC-AUC, PR-AUC (average precision), per-class report,

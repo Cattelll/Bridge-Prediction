@@ -1,4 +1,4 @@
-# Ringkasan Proyek — Bridge Contract Prediction
+# Ringkasan Proyek — Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
 *Terakhir diperbarui: 2026-09-27. Sumber kebenaran naratif lengkap:
 [CLAUDE.md](CLAUDE.md). Angka di sini berasal dari eksekusi ulang penuh
@@ -16,9 +16,10 @@ terhadap semua kontrak par).*
 ## 1. Tujuan
 
 Penelitian skripsi yang membandingkan tiga algoritma ensemble berbasis pohon —
-**Random Forest, XGBoost, LightGBM** — untuk memprediksi apakah kontrak yang
-dibid manusia **optimal** pada Contract Bridge, dari data kartu + lelang
-(rekaman BBO LIN dan arsip PBN).
+**Random Forest, XGBoost, LightGBM** — sebagai **classifier biner** yang
+mengklasifikasikan setiap board Contract Bridge ke dalam dua kelas: kontrak
+yang dibid manusia **cocok dengan kontrak par** (kelas 1) atau **tidak cocok**
+(kelas 0), berdasarkan data kartu + lelang (rekaman BBO LIN dan arsip PBN).
 
 - **Target utama (sejak 2026-09-18): `matches_par_contract`, biner.** 1 jika
   kontrak yang benar-benar dibid (`target`, termasuk marker x/xx) dan sisi
@@ -34,7 +35,7 @@ dibid manusia **optimal** pada Contract Bridge, dari data kartu + lelang
   SmallSlam/GrandSlam).
 
 Di luar ruang lingkup (tidak dipakai, sesuai keputusan): neural network / deep
-learning, reinforcement learning / game theory, prediksi real-time / streaming,
+learning, reinforcement learning / game theory, klasifikasi real-time / streaming,
 web app / API serving, ensemble/soft-voting/stacking dari ketiga model
 (dicoba lalu dihapus 2026-08-31).
 
@@ -137,9 +138,9 @@ dihapus, diganti ROC-AUC/PR-AUC/precision-recall-F1 kelas positif.
 ## 5. Hasil (test set, target biner `matches_par_contract`)
 
 *Sumber: `outputs/results/test_comparison.csv`, `nb06_final_comparison.csv`.
-Baseline mayoritas (selalu tebak "tidak cocok") = 75,7% accuracy — semua
+Baseline mayoritas (selalu mengklasifikasikan "tidak cocok") = 75,7% accuracy — semua
 model mengungguli, dan F1 macro menegaskan model membedakan kedua kelas,
-bukan sekadar menebak mayoritas. ROC-AUC ~0,82–0,85 (bukan mendekati 1,0) →
+bukan sekadar mengikuti kelas mayoritas. ROC-AUC ~0,82–0,85 (bukan mendekati 1,0) →
 tidak ada tanda leakage residual.*
 
 **Baseline resmi** (hyperparameter `configs/config.yaml` apa adanya):
@@ -197,7 +198,7 @@ biner.
   mendekati 1,0) mengonfirmasi model belajar dari fitur tangan/lelang yang
   sah, bukan bocoran label.
 - **Semua model jauh mengungguli baseline mayoritas** (75,7% accuracy) di
-  F1 macro — bukti nyata model membedakan kedua kelas, bukan cuma menebak
+  F1 macro — bukti nyata model membedakan kedua kelas, bukan cuma mengikuti
   mayoritas di kelas imbalance ekstrem.
 - **Seleksi fitur SHAP (2026-08-31, era 36-kelas)**: top-40 fitur (dari 182)
   setara baseline penuh, tapi gain di dalam noise — tidak dipromosikan,

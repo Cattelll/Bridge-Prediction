@@ -25,8 +25,8 @@ apa isi masing-masing, mana yang masih berlaku, dan apa kesimpulan bersamanya.*
 
 ## 2. Inti proyek saat ini
 
-- **Tujuan**: membandingkan Random Forest, XGBoost, dan LightGBM untuk
-  memprediksi apakah kontrak yang dibid manusia cocok dengan salah satu
+- **Tujuan**: membandingkan Random Forest, XGBoost, dan LightGBM sebagai
+  classifier biner yang mengklasifikasikan apakah kontrak yang dibid manusia cocok dengan salah satu
   **kontrak par** Double-Dummy Solver (level, strain, status double, dan
   sisi declarer — diperketat 2026-09-27).
 - **Target**: `matches_par_contract` (biner) — 24,3% cocok / 75,7% tidak.

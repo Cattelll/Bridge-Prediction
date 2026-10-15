@@ -1,9 +1,12 @@
-# CLAUDE.md — Bridge Contract Prediction
+# CLAUDE.md — Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
 ## Ringkasan Proyek
 Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
-(Random Forest, XGBoost, LightGBM) untuk memprediksi kontrak optimal
-Contract Bridge dari rekaman BBO LIN format.
+(Random Forest, XGBoost, LightGBM) sebagai **classifier biner** yang
+mengklasifikasikan apakah kontrak yang dibid manusia pada Contract Bridge
+cocok dengan kontrak par Double-Dummy Solver, dari rekaman BBO LIN + PBN.
+(Era 36-kelas sebelum 2026-09-18 membingkainya sebagai prediksi kontrak;
+sejak 2026-09-18 proyek dibingkai sebagai **klasifikasi**, bukan prediksi.)
 
 ## Status Proyek (September 2026)
 **Perubahan arah penelitian (2026-09-18)**: target diganti dari klasifikasi
@@ -730,7 +733,7 @@ tersirat pada tanggal-tanggal sebelum 2026-09-20 akibat ini.
 ### Yang di luar ruang lingkup — jangan ditambahkan tanpa diskusi
 - Neural network / deep learning
 - Reinforcement learning / game theory
-- Real-time / streaming prediction
+- Klasifikasi real-time / streaming
 - Web app / API serving
 - Target `target_base` (36 kelas) atau `target` dengan marker
   doubled/redoubled (66 kelas) sebagai primary — status 2026-09-18: hanya
@@ -909,9 +912,10 @@ definisi label diperketat 2026-09-27. Superseded angka sebelumnya — lihat
 | XGBoost | **83.0%** | 0.729 | 0.814 | 0.831 | 0.677 |
 | **LightGBM** | 81.5% | **0.761** | 0.819 | **0.845** | **0.702** |
 
-Baseline mayoritas (selalu tebak "tidak cocok", 75.7% dari test set) =
-75.7% accuracy — semua model mengungguli, dan F1 macro menegaskan mereka
-membedakan kedua kelas secara nyata, bukan sekadar menebak mayoritas.
+Baseline mayoritas (selalu mengklasifikasikan "tidak cocok", 75.7% dari
+test set) = 75.7% accuracy — semua model mengungguli, dan F1 macro menegaskan
+mereka membedakan kedua kelas secara nyata, bukan sekadar mengikuti kelas
+mayoritas.
 
 **Kandidat terbaik notebook 05/06 (retuning, belum dipromosikan ke
 baseline resmi)**: **XGBoost Eksperimen F (soft-balanced, `sample_weight`

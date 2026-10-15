@@ -33,7 +33,7 @@ ns_hcp ≥ 25 ?
 - **Saat training**, di setiap simpul algoritma mencoba banyak kombinasi
   fitur + nilai batas, lalu memilih yang **paling baik memisahkan** board
   kelas 0 dan kelas 1.
-- **Saat prediksi**, satu board menelusuri pohon sesuai nilai fiturnya sampai
+- **Saat klasifikasi**, satu board menelusuri pohon sesuai nilai fiturnya sampai
   tiba di satu daun. Daun itu berisi peluang board tersebut cocok par.
 - Karena semua fitur dipakai lewat perbandingan "≥ batas", pohon **tidak perlu
   normalisasi fitur** dan bisa menangkap interaksi antar fitur secara alami
@@ -58,8 +58,8 @@ rata-ratanya. Kesalahan acak tiap pohon saling menutupi.
 3. Ulangi sampai 300 pohon (baseline). Semua pohon **independen**, jadi bisa
    dilatih paralel.
 
-**Cara prediksi:** tiap pohon memberi peluang kelas 1, lalu **dirata-rata**.
-Kalau rata-ratanya ≥ 0,5, board diprediksi "cocok par".
+**Cara klasifikasi:** tiap pohon memberi peluang kelas 1, lalu **dirata-rata**.
+Kalau rata-ratanya ≥ 0,5, board diklasifikasikan "cocok par".
 
 **Pemilihan pertanyaan terbaik:** memakai **Gini impurity**, yaitu ukuran
 seberapa campur kelas 0 dan 1 di satu simpul. Split terbaik adalah yang paling
@@ -87,20 +87,20 @@ Board yang cocok par jadi "lebih berat" saat menghitung Gini.
 kesalahan** gabungan pohon-pohon sebelumnya.
 
 **Cara training:**
-1. Mulai dari tebakan awal yang sama untuk semua board (berdasarkan proporsi
+1. Mulai dari skor awal yang sama untuk semua board (berdasarkan proporsi
    kelas 1).
-2. Hitung seberapa salah tebakan saat ini untuk tiap board, dalam bentuk
+2. Hitung seberapa salah skor saat ini untuk tiap board, dalam bentuk
    **gradien log-loss**: board kelas 1 yang peluangnya masih rendah punya
    "kesalahan" besar.
-3. Latih pohon kecil (`max_depth=6`) untuk memprediksi kesalahan itu. Split
+3. Latih pohon kecil (`max_depth=6`) untuk memodelkan kesalahan itu. Split
    dipilih yang paling menurunkan log-loss, dengan penalti regularisasi
    (`reg_lambda`) supaya nilai daun tidak ekstrem.
 4. Tambahkan pohon itu ke model, tapi dikecilkan dulu dengan `learning_rate`
    (0,05). Artinya tiap pohon hanya mengoreksi 5% dari yang ia pelajari.
 5. Ulangi sampai 300 pohon.
 
-**Cara prediksi:** skor semua pohon **dijumlahkan**, lalu diubah jadi peluang
-lewat fungsi **sigmoid**. Peluang ≥ 0,5 diprediksi "cocok par".
+**Cara klasifikasi:** skor semua pohon **dijumlahkan**, lalu diubah jadi peluang
+lewat fungsi **sigmoid**. Peluang ≥ 0,5 diklasifikasikan "cocok par".
 
 **Pertumbuhan pohon:** *level-wise* (depth-wise). Pohon dipecah lapis demi lapis
 sampai `max_depth`, jadi bentuknya relatif simetris.
@@ -114,7 +114,7 @@ Nilai tiap fitur dikelompokkan ke sejumlah *bin*, lalu split dicari antar bin.
 
 **Penanganan ketidakseimbangan kelas:** XGBoost **tidak punya
 `class_weight`**. Di baseline, XGBoost dilatih **tanpa bobot kelas**, sehingga
-cenderung menebak kelas mayoritas (0). Penyeimbangan hanya bisa dilakukan
+cenderung mengklasifikasikan ke kelas mayoritas (0). Penyeimbangan hanya bisa dilakukan
 lewat `sample_weight` (bobot per baris saat `fit`), yang diuji di Eksperimen B
 dan F.
 
@@ -193,7 +193,7 @@ Random Forest (kelas 1 ≈ 2,06, kelas 0 ≈ 0,66).
 | Paradigma | **Bagging** | **Boosting** | **Boosting** |
 | Hubungan antar pohon | Independen, paralel | Berurutan, tiap pohon memperbaiki sebelumnya | Berurutan, tiap pohon memperbaiki sebelumnya |
 | Bentuk pohon | Dalam, tanpa batas | Dangkal, level-wise (`max_depth` 6) | Leaf-wise, dibatasi `num_leaves` (63) |
-| Penggabungan prediksi | Rata-rata peluang | Jumlah skor → sigmoid | Jumlah skor → sigmoid |
+| Penggabungan output pohon | Rata-rata peluang | Jumlah skor → sigmoid | Jumlah skor → sigmoid |
 | Kriteria split | Gini impurity, nilai asli | Penurunan log-loss + regularisasi L2, histogram | Penurunan log-loss, histogram |
 | Keacakan baris | Bootstrap per pohon | `subsample` 0,8 per pohon | Tidak aktif (lihat catatan) |
 | Keacakan fitur | Per split (√174 ≈ 13 fitur) | Per pohon (80%) | Per pohon (80%) |
@@ -210,7 +210,7 @@ algoritmanya.
 
 ### Apa artinya di hasil (test set, baseline)
 
-| Model | Accuracy | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi "1" |
+| Model | Accuracy | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan "1" |
 |---|---|---|---|---|---|
 | Random Forest | 82,3% | 0,754 | 60,3% | 64,7% | 22,6% |
 | XGBoost | **83,0%** | 0,729 | **44,9%** | **75,3%** | 14,5% |
@@ -218,12 +218,12 @@ algoritmanya.
 
 (Porsi kelas 1 yang sebenarnya di test set = 24,3%.)
 
-- **XGBoost baseline** jarang menebak "cocok par" (14,5%, jauh di bawah 24,3%).
-  Kalau menebak "1" biasanya benar (precision tinggi), tapi banyak board cocok
+- **XGBoost baseline** jarang mengklasifikasikan board sebagai "cocok par" (14,5%, jauh di bawah 24,3%).
+  Kalau mengklasifikasikan "1" biasanya benar (precision tinggi), tapi banyak board cocok
   par yang terlewat (recall 45%). Penyebabnya adalah **tidak adanya bobot
   kelas**, bukan algoritmanya. Setelah diberi bobot (Eksperimen B/F),
   XGBoost menyamai atau melampaui dua algoritma lain.
-- **LightGBM** paling berani menebak "1" (28,3%), sehingga recall tertinggi
+- **LightGBM** paling sering mengklasifikasikan "1" (28,3%), sehingga recall tertinggi
   dan F1 macro tertinggi di antara baseline, dengan konsekuensi accuracy
   sedikit lebih rendah.
 - **Random Forest** berada di tengah. Walaupun sama-sama memakai bobot

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bridge-prediction"
 version = "0.1.0"
-description = "ML-based bridge contract prediction from BBO LIN format records"
+description = "Binary classification of whether a bid bridge contract matches the double-dummy par contract (BBO LIN + PBN records)"
 requires-python = ">=3.12"
 dependencies = [
     "scikit-learn>=1.4",

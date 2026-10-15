@@ -1,5 +1,5 @@
 """
-Feature engineering for bridge contract prediction.
+Feature engineering for bridge par-contract classification.
 
 Extracts hand-based, deal-level, and auction-based features
 from a BoardRecord into a flat dictionary suitable for ML.

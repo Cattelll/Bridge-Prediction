@@ -10,7 +10,7 @@ evaluasi ulang model tersimpan di `outputs/models/` pada test set
 
 ---
 
-## 1. Apa yang diprediksi
+## 1. Apa yang diklasifikasikan
 
 Untuk setiap board, model menjawab: **apakah kontrak yang dibid pemain manusia
 sama dengan salah satu kontrak par menurut Double-Dummy Solver (DDS)?** Yang
@@ -24,7 +24,7 @@ hanya level+strain terhadap kontrak par pertama yang dibandingkan.)
 | **1** | Kontrak dibid = kontrak par (mis. dibid 4♠ oleh N, par 4♠ oleh NS) | 24,3% |
 | **0** | Kontrak dibid ≠ kontrak par (mis. dibid 3NT, par 4♠; atau 4♠ oleh E, par 4♠ oleh NS) | 75,7% |
 
-Kelasnya **tidak seimbang** (sekitar 1 : 3). Model yang selalu menebak "0"
+Kelasnya **tidak seimbang** (sekitar 1 : 3). Model yang selalu mengklasifikasikan "0"
 sudah mendapat accuracy 75,7%, jadi **F1 macro** dipakai sebagai metrik utama
 di samping accuracy.
 
@@ -54,7 +54,7 @@ predict_proba(X) → peluang kelas 1 → ≥ 0,5 ⇒ "1 (cocok par)", selain itu
 ```
 
 **Yang sama di SEMUA eksperimen** (hanya berubah kalau disebut eksplisit):
-data & split, 174 fitur, `random_state=42`, ambang prediksi 0,5, dan metrik
+data & split, 174 fitur, `random_state=42`, ambang klasifikasi 0,5, dan metrik
 evaluasi.
 
 ---
@@ -85,8 +85,8 @@ Baseline Random Forest ─────► Exp E: hyperparameter Random Forest
 ## 4. Detail per eksperimen
 
 Metrik "kelas 1" di bawah dihitung di test set. Porsi kelas 1 yang sebenarnya
-di test set = **24,3%**; "porsi prediksi 1" menunjukkan seberapa sering model
-menebak "cocok par".
+di test set = **24,3%**; "porsi diklasifikasikan 1" menunjukkan seberapa sering model
+mengklasifikasikan board sebagai "cocok par".
 
 ### 4.1 Ablasi fitur trik DD — `notebooks/03` bagian 1b
 
@@ -111,7 +111,7 @@ adanya. Detail tiap parameter ada di [ALGORITHMS.md](ALGORITHMS.md).
 | XGBoost | 300 pohon, depth 6, lr 0,05, subsample 0,8, colsample 0,8 | **tidak ada** |
 | LightGBM | 300 pohon, 63 leaves, lr 0,05, colsample 0,8 | balanced |
 
-| Model | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi 1 |
+| Model | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan 1 |
 |---|---|---|---|---|---|
 | Random Forest | 82,3% | 0,754 | 60,3% | 64,7% | 22,6% |
 | XGBoost | 83,0% | 0,729 | 44,9% | 75,3% | 14,5% |
@@ -119,7 +119,7 @@ adanya. Detail tiap parameter ada di [ALGORITHMS.md](ALGORITHMS.md).
 
 **Catatan:** perbedaan ketiga baseline **bukan perbandingan yang adil
 antar algoritma**, karena XGBoost satu-satunya yang tanpa bobot kelas. Itulah
-sebabnya XGBoost jarang menebak "1" (14,5%) dan F1 macro-nya paling rendah.
+sebabnya XGBoost jarang mengklasifikasikan "1" (14,5%) dan F1 macro-nya paling rendah.
 
 ### 4.3 Eksperimen A — XGBoost, retuning hyperparameter
 
@@ -139,14 +139,14 @@ sebabnya XGBoost jarang menebak "1" (14,5%) dan F1 macro-nya paling rendah.
 (6 → 8), dan memakai lebih banyak baris per pohon (80% → 90%).
 (`min_child_weight=1` dan `reg_lambda=1,0` sama dengan default XGBoost.)
 
-| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi 1 |
+| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan 1 |
 |---|---|---|---|---|---|
 | Baseline XGBoost | 83,0% | 0,729 | 44,9% | 75,3% | 14,5% |
 | **Exp A** | **84,9%** | 0,769 | 53,7% | 77,1% | 16,9% |
 
 **Dampak:** pohon yang lebih besar membuat model lebih mampu mengenali board
 cocok par (recall +8,8pp) sekaligus sedikit lebih tepat (precision +1,8pp).
-Tapi karena masih tanpa bobot, model tetap jarang menebak "1" (16,9% vs 24,3%
+Tapi karena masih tanpa bobot, model tetap jarang mengklasifikasikan "1" (16,9% vs 24,3%
 sebenarnya).
 Accuracy tertinggi di seluruh proyek.
 
@@ -162,14 +162,14 @@ Accuracy tertinggi di seluruh proyek.
 di RF/LightGBM).
 **Yang tetap:** hyperparameter Exp A (500 pohon, depth 8, …).
 
-| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi 1 |
+| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan 1 |
 |---|---|---|---|---|---|
 | Exp A (tanpa bobot) | 84,9% | 0,769 | 53,7% | 77,1% | 16,9% |
 | **Exp B** (bobot penuh) | 83,2% | 0,773 | **66,7%** | 65,0% | 25,0% |
 
-**Dampak:** model sekarang menebak "1" kira-kira sesering proporsi aslinya
+**Dampak:** model sekarang mengklasifikasikan "1" kira-kira sesering proporsi aslinya
 (25,0%). Recall kelas 1 naik +13,0pp, tapi precision turun −12,1pp karena lebih banyak
-board kelas 0 salah ditebak "1". Hasilnya F1 macro naik, accuracy turun.
+board kelas 0 salah diklasifikasikan "1". Hasilnya F1 macro naik, accuracy turun.
 
 ### 4.5 Eksperimen C — LightGBM, retuning hyperparameter
 
@@ -192,12 +192,12 @@ board kelas 0 salah ditebak "1". Hasilnya F1 macro naik, accuracy turun.
 lebih besar (63 → 127 daun), tapi kedalamannya dibatasi (tanpa batas → 9).
 `more_leaves` (95 daun) nyaris sama baiknya (selisih 0,1pp di val).
 
-| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi 1 |
+| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan 1 |
 |---|---|---|---|---|---|
 | Baseline LightGBM | 81,5% | 0,761 | 70,1% | 60,2% | 28,3% |
 | **Exp C** | 83,1% | 0,775 | 68,4% | 64,2% | 25,9% |
 
-**Dampak:** model sedikit lebih "yakin". Porsi tebakan "1" turun mendekati
+**Dampak:** model sedikit lebih "yakin". Porsi klasifikasi "1" turun mendekati
 proporsi asli, precision naik +4,0pp dengan recall hanya turun −1,7pp. Hasilnya
 accuracy +1,6pp dan F1 macro +1,4pp.
 
@@ -220,7 +220,7 @@ accuracy +1,6pp dan F1 macro +1,4pp.
 (`more_trees`) tidak membantu, jadi kenaikannya datang dari `max_features`.
 Konsekuensinya training jauh lebih lambat (≈331 s vs ≈8 s di val).
 
-| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi 1 |
+| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan 1 |
 |---|---|---|---|---|---|
 | Baseline RF | 82,3% | 0,754 | 60,3% | 64,7% | 22,6% |
 | **Exp E** | 82,9% | 0,766 | 63,8% | 65,2% | 23,8% |
@@ -249,14 +249,14 @@ sample_weight = 1 + α × (bobot_balanced − 1)
 | **0,50** ✔ | **≈ 1,53 / 0,83** | 0,8401 | 0,7736 | **0,8069** |
 | 0,75 | ≈ 1,79 / 0,75 | 0,8338 | 0,7728 | 0,8033 |
 
-| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi prediksi 1 |
+| Test set | Acc | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan 1 |
 |---|---|---|---|---|---|
 | Exp A (α = 0) | 84,9% | 0,769 | 53,7% | 77,1% | 16,9% |
 | **Exp F (α = 0,5)** | 84,7% | **0,782** | 61,7% | 71,4% | 21,0% |
 | Exp B (α = 1) | 83,2% | 0,773 | 66,7% | 65,0% | 25,0% |
 
 **Dampak:** Exp F berada di tengah antara A dan B dalam hal seberapa sering
-menebak "1". Recall naik +8,0pp dibanding A dengan precision tetap jauh di
+mengklasifikasikan "1". Recall naik +8,0pp dibanding A dengan precision tetap jauh di
 atas B. Hasilnya F1 macro tertinggi, dan accuracy hanya −0,2pp dari Exp A.
 
 ---
@@ -274,7 +274,7 @@ atas B. Hasilnya F1 macro tertinggi, dan accuracy hanya −0,2pp dari Exp A.
 | Random Forest baseline | 82,3% | 0,754 | 0,821 | 0,823 | 0,667 |
 | XGBoost baseline | 83,0% | 0,729 | 0,814 | 0,831 | 0,677 |
 
-Pembanding: tebak mayoritas (selalu "0") = 75,7% accuracy. ROC-AUC
+Pembanding: kelas mayoritas (selalu "0") = 75,7% accuracy. ROC-AUC
 0,82–0,85 (bukan mendekati 1,0) menandakan tidak ada leakage yang tersisa.
 
 Baseline resmi (`outputs/models/{randomforest,xgboost,lightgbm}.pkl`) **tidak
@@ -285,12 +285,12 @@ diganti** oleh hasil `notebooks/05`. Promosi Exp F belum diputuskan.
 ## 6. Inti temuan
 
 1. **Bobot kelas adalah faktor penentu terbesar.** Ia mengatur seberapa sering
-   model berani menebak "cocok par":
-   - **Tanpa bobot** (XGBoost baseline, Exp A): menebak "1" hanya 14–17%
+   model berani mengklasifikasikan board sebagai "cocok par":
+   - **Tanpa bobot** (XGBoost baseline, Exp A): mengklasifikasikan "1" hanya 14–17%
      dari board. Precision tinggi, recall rendah, F1 macro rendah.
-   - **Bobot penuh** (Exp B, RF/LightGBM balanced): menebak "1" 22–28%.
+   - **Bobot penuh** (Exp B, RF/LightGBM balanced): mengklasifikasikan "1" 22–28%.
      Recall tinggi, precision lebih rendah.
-   - **Bobot setengah** (Exp F, α=0,5): menebak "1" 21,0%. Kompromi terbaik,
+   - **Bobot setengah** (Exp F, α=0,5): mengklasifikasikan "1" 21,0%. Kompromi terbaik,
      F1 macro tertinggi dengan accuracy nyaris tertinggi.
 2. **Retuning hyperparameter membantu, tapi lebih kecil.** Di validation set,
    F1 macro naik +1,2pp untuk LightGBM (Exp C) dan +1,4pp untuk Random Forest
