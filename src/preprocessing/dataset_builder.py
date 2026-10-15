@@ -90,6 +90,7 @@ def build_dataset(
     random_seed: int = 42,
     remove_pass: bool = False,
     include_dds: bool = False,
+    include_dds_features: bool = True,
     dds_cache_path: str | Path | None = None,
     extra_boards: list | None = None,
 ) -> dict[str, pd.DataFrame]:
@@ -114,6 +115,9 @@ def build_dataset(
         dds_cache_path : path to a precomputed DDS CSV (keyed by
                          _source_file/_room/_board_number) to avoid recomputing;
                          if None or missing, DDS is computed from scratch
+        include_dds_features: if False with include_dds=True, use DDS only to
+                         compute `matches_par_contract`, then remove DDS
+                         columns before deduplication and saving.
         extra_boards   : optional list of additional BoardRecord objects (e.g. from
                          PBNParser) to fold in alongside the parsed LIN boards —
                          for supplementary data sources beyond data/raw/*.lin
@@ -199,6 +203,14 @@ def build_dataset(
         n_optimal = int(df["matches_par_contract"].sum())
         print(f"      matches_par_contract : {n_optimal}/{len(df)} board optimal "
               f"({n_optimal / len(df):.1%})")
+
+        if not include_dds_features:
+            dds_cols = [
+                c for c in df.columns
+                if c.startswith(("ns_dd_", "ew_dd_", "dd_par_"))
+            ]
+            df = df.drop(columns=dds_cols)
+            print(f"      DDS features excluded: removed {len(dds_cols)} DDS columns")
 
     # ------------------------------------------------------------------
     # 3. Cleaning

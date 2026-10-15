@@ -31,6 +31,7 @@ data/interim/*
 data/processed/*
 !data/processed/.gitkeep
 data/processed_building/
+data/processed_no_dds/
 data/processed_dds/*
 !data/processed_dds/.gitkeep
 data/processed_combined/*
