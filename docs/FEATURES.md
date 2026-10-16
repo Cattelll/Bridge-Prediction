@@ -1,4 +1,4 @@
-# Data Dictionary — 164 Fitur
+# Data Dictionary — 174 Fitur
 
 Sumber kebenaran daftar kolom: `data/processed/feature_columns.json`
 (dihasilkan otomatis oleh `build_dataset()`, jangan diedit manual).
@@ -77,12 +77,25 @@ Dihitung oleh `extract_auction_features()` dari urutan lelang mentah (`board.auc
 | `opening_strain_{C,D,H,S,N,PASS}` | 0/1 | One-hot strain dari opening bid |
 | `auction_alerts` | int | Jumlah bid yang diberi alert/announcement |
 
+## 6. Fitur Double-Dummy Solver (10 fitur)
+
+Dihitung dari tabel jumlah trik DDS untuk lima strain (`S`, `H`, `D`, `C`, `N`).
+
+| Fitur | Tipe | Keterangan |
+|---|---|---|
+| `ns_dd_{S,H,D,C,N}` | int 0?13 | Jumlah trik yang dapat diambil partnership NS pada strain tersebut dengan semua tangan terbuka |
+| `ew_dd_{S,H,D,C,N}` | int 0?13 | Jumlah trik partnership EW pada strain tersebut |
+
+DDS juga menghasilkan kolom `dd_par_*` dan `dd_par_contracts` untuk membentuk
+label. Kolom par tersebut **tidak masuk ke fitur model** karena merupakan
+masukan langsung label.
+
 ## Metadata (bukan fitur ML)
 
 Kolom berprefix `_` disimpan di baris fitur untuk keperluan penelusuran/debug,
 tapi **dibuang** sebelum training (lihat `_META_COLS` di `dataset_builder.py`):
 
-`_board_number`, `_source_file`, `_room`, `_declarer`, `_result`, `_tricks_made`
+`_board_number`, `_source_file`, `_room`, `_declarer`, `_result`, `_tricks_made`, `_deal_key`
 
 ## Target (bukan fitur, kolom label)
 
@@ -91,13 +104,14 @@ di `src/features/engineer.py`.
 
 | Kolom | Kelas | Contoh |
 |---|---|---|
-| `target_base` | 36 — **primary** | `"PASS"`, `"3N"`, `"4S"` |
+| `matches_par_contract` | 2 ? **primary** | `0` tidak cocok; `1` cocok dengan salah satu kontrak par DDS |
+| `target_base` | 36 ? historis | `"PASS"`, `"3N"`, `"4S"` |
 | `target` | ≤66 | `"4Sx"`, `"6Nxx"` |
 | `target_category` | 5 | `Pass`, `Partscore`, `Game`, `SmallSlam`, `GrandSlam` |
 
 ## Invariant
 
-Urutan 164 kolom pada `feature_columns.json` **harus tetap sama** — model
+Urutan 174 kolom pada `feature_columns.json` **harus tetap sama** — model
 `.pkl` di `outputs/models/` terserialisasi dengan asumsi urutan kolom input
 ini. Jangan menambah/menghapus/mengurutkan ulang fitur tanpa melatih ulang
 semua model.

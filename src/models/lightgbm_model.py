@@ -1,7 +1,7 @@
 """LightGBM wrapper (BaseModel) around lightgbm.LGBMClassifier.
 
-Best F1 Macro of the three models (0.253), i.e. the most balanced across
-rare contract classes despite lower raw accuracy than XGBoost.
+LightGBM wrapper for the binary matches_par_contract task. Class weighting
+is configured explicitly in configs/config.yaml.
 Defaults mirror configs/config.yaml.
 """
 

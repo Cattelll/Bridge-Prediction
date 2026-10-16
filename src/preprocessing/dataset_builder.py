@@ -29,7 +29,7 @@ from src.features import extract_features, CONTRACT_LABELS
 # Columns used as ML features (all numeric/binary — no encoding needed)
 _META_COLS = {
     "_board_number", "_source_file", "_room", "_declarer",
-    "_result", "_tricks_made",
+    "_result", "_tricks_made", "_deal_key",
 }
 _TARGET_COLS = {"target", "target_base", "target_category", "matches_par_contract"}
 
@@ -78,6 +78,24 @@ def _get_dds_dataframe(boards, dds_cache_path: str | Path | None = None) -> pd.D
         df_dds[col] = df_dds[col].astype(str)
 
     return expand_par_denom(df_dds)
+
+
+def _deal_key(board) -> str:
+    """Return a stable signature for a deal, independent of card order/source."""
+    rank_order = {rank: i for i, rank in enumerate("AKQJT98765432")}
+    suit_fields = {"S": "spades", "H": "hearts", "D": "diamonds", "C": "clubs"}
+    hands = []
+    for seat in ("N", "E", "S", "W"):
+        hand = board.hands[seat]
+        suits = []
+        for suit in ("S", "H", "D", "C"):
+            cards = sorted(
+                getattr(hand, suit_fields[suit]),
+                key=lambda rank: rank_order.get(rank.upper(), 99),
+            )
+            suits.append(suit + "".join(rank.upper() for rank in cards))
+        hands.append(seat + ":" + ",".join(suits))
+    return "|".join(hands)
 
 
 def build_dataset(
@@ -144,6 +162,7 @@ def build_dataset(
     for b in boards:
         row = extract_features(b)
         if row is not None:
+            row["_deal_key"] = _deal_key(b)
             rows.append(row)
     print(f"      Feature rows : {len(rows)}")
 
@@ -231,9 +250,11 @@ def build_dataset(
         if c not in _META_COLS and c not in _TARGET_COLS and c not in _LEAKAGE_COLS
     ]
 
-    # Drop exact duplicates on feature columns only
+    # Drop repeated records only when both inputs and label are identical.
+    # The same summarized feature vector can legitimately have different
+    # labels (e.g. distinct auctions/contracts on the same hand); retain both.
     before = len(df)
-    df = df.drop_duplicates(subset=feature_cols).reset_index(drop=True)
+    df = df.drop_duplicates(subset=feature_cols + [target_col]).reset_index(drop=True)
     print(f"      Removed {before - len(df)} duplicate rows.")
     print(f"      Final rows   : {len(df)}")
 
@@ -272,23 +293,13 @@ def build_dataset(
     print(f"      Encoder saved: {encoder_path}")
 
     # ------------------------------------------------------------------
-    # 5. Train / val / test split — GROUP-AWARE by physical deal
+    # 5. Train / val / test split ? group by canonical physical deal
     # ------------------------------------------------------------------
-    # BBO vugraph records each board twice ("open room" / "closed room"):
-    # two different pairs bid the SAME dealt hands. That means ~all
-    # hand-based features (HCP, shape, fit, stoppers, LTC, ...) are
-    # identical between the two rows of a pair — only the auction/
-    # contract differs. A plain random split let ~46% of these pairs
-    # fall into different partitions, so ~60% of val/test rows had an
-    # identical-hand "twin" sitting in train (verified empirically:
-    # val/test accuracy on those rows was 92-95% when the twin bid the
-    # SAME contract vs 23-28% when it bid a DIFFERENT one — the model
-    # was partly memorizing deals, not generalizing). Grouping by
-    # (_source_file, _board_number) keeps every pair on the same side
-    # of the split, eliminating that leakage.
-    print("[5/5] Splitting (group-aware by source_file + board_number)...")
+    # The same deal can appear in multiple source files with different board
+    # numbers. A canonical 52-card signature keeps every copy together.
+    print("[5/5] Splitting (group-aware by canonical 52-card deal)...")
 
-    groups = df["_source_file"].astype(str) + "||" + df["_board_number"].astype(str)
+    groups = df["_deal_key"].astype(str)
 
     N_FOLDS = 20  # 14 train / 3 val / 3 test folds == 70% / 15% / 15%
     sgkf = StratifiedGroupKFold(n_splits=N_FOLDS, shuffle=True, random_state=random_seed)
@@ -311,15 +322,14 @@ def build_dataset(
     print(f"      Val   : {len(df_val)}")
     print(f"      Test  : {len(df_test)}")
 
-    # Sanity check: no group (physical deal) should appear in more than
-    # one split.
-    g_train = set((df_train["_source_file"].astype(str) + "||" + df_train["_board_number"].astype(str)))
-    g_val = set((df_val["_source_file"].astype(str) + "||" + df_val["_board_number"].astype(str)))
-    g_test = set((df_test["_source_file"].astype(str) + "||" + df_test["_board_number"].astype(str)))
+    # Sanity check across source files: no exact deal can cross partitions.
+    g_train = set(df_train["_deal_key"].astype(str))
+    g_val = set(df_val["_deal_key"].astype(str))
+    g_test = set(df_test["_deal_key"].astype(str))
     overlap = (g_train & g_val) | (g_train & g_test) | (g_val & g_test)
     if overlap:
         raise RuntimeError(f"Group leakage across splits: {len(overlap)} group(s) appear in >1 split")
-    print("      No cross-split group leakage (verified).")
+    print("      No exact deal appears in more than one split (verified).")
 
     missing_classes = set(df["label"]) - set(df_train["label"])
     if missing_classes:
@@ -361,9 +371,27 @@ def load_splits(
             "jangan jalankan notebook lain selagi notebook 1 sedang membangun dataset."
         )
 
-    df_train = pd.read_csv(processed_dir / "train.csv")
-    df_val = pd.read_csv(processed_dir / "val.csv")
-    df_test = pd.read_csv(processed_dir / "test.csv")
+    metadata_types = {
+        "_board_number": str,
+        "_source_file": str,
+        "_room": str,
+        "_declarer": str,
+        "_deal_key": str,
+    }
+    read_options = {"dtype": metadata_types, "low_memory": False, "keep_default_na": False}
+    df_train = pd.read_csv(processed_dir / "train.csv", **read_options)
+    df_val = pd.read_csv(processed_dir / "val.csv", **read_options)
+    df_test = pd.read_csv(processed_dir / "test.csv", **read_options)
+
+    if any("_deal_key" not in split.columns for split in (df_train, df_val, df_test)):
+        raise ValueError(
+            f"Dataset in {processed_dir} predates canonical deal grouping. "
+            "Rebuild it with the current notebooks/01 or scripts/run_pipeline.py."
+        )
+    group_sets = [set(split["_deal_key"]) for split in (df_train, df_val, df_test)]
+    if ((group_sets[0] & group_sets[1]) or (group_sets[0] & group_sets[2])
+            or (group_sets[1] & group_sets[2])):
+        raise ValueError(f"Canonical deal leakage detected in saved splits at {processed_dir}.")
 
     feature_cols: list[str] = json.loads((processed_dir / "feature_columns.json").read_text())
 

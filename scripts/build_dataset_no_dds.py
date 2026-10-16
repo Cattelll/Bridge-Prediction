@@ -1,63 +1,74 @@
-"""Build the official binary-label dataset without any DDS feature columns.
+"""Build a no-DDS-feature view of the official binary dataset.
 
-DDS is still read from the v4 cache to compute ``matches_par_contract``.
-All DDS columns are removed before deduplication and export, leaving the
-canonical hand/auction feature set. Outputs go to data/processed_no_dds/.
+DDS v4 still defines the target. This script first creates the official split
+with canonical-deal grouping, then projects out every DDS column while
+preserving the exact same rows and partition assignments for an ablation.
 """
 
-from pathlib import Path
+from __future__ import annotations
+
 import json
+import pickle
+import shutil
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.parser import PBNParser
-from src.preprocessing import build_dataset
+from src.parser import PBNParser  # noqa: E402
+from src.preprocessing import build_dataset  # noqa: E402
 
 
 def main() -> None:
     raw_dir = ROOT / "data" / "raw"
     pbn_dir = ROOT / "data" / "raw_pbn"
+    official_dir = ROOT / "data" / "processed"
     output_dir = ROOT / "data" / "processed_no_dds"
     dds_cache = ROOT / "data" / "combined_dds_cache_v4.csv"
-
     if not dds_cache.exists():
         raise FileNotFoundError(
-            f"DDS v4 cache not found: {dds_cache}. It is needed for the label, "
-            "even though DDS feature columns are excluded from this dataset."
+            f"DDS v4 cache not found: {dds_cache}. It is required to make the label."
         )
 
     pbn_boards = PBNParser().parse_directory(pbn_dir)
     splits = build_dataset(
         raw_dir=raw_dir,
-        output_dir=output_dir,
+        output_dir=official_dir,
         target_col="matches_par_contract",
         train_ratio=0.70,
         val_ratio=0.15,
         test_ratio=0.15,
         random_seed=42,
         include_dds=True,
-        include_dds_features=False,
         dds_cache_path=dds_cache,
         extra_boards=pbn_boards,
     )
+    official_features = json.loads((official_dir / "feature_columns.json").read_text(encoding="utf-8"))
+    canonical_features = [
+        col for col in official_features
+        if not col.startswith(("ns_dd_", "ew_dd_", "dd_par_"))
+    ]
+    dds_cols = [
+        col for col in splits["full"].columns
+        if col.startswith(("ns_dd_", "ew_dd_", "dd_par_"))
+    ]
 
-    feature_cols_path = output_dir / "feature_columns.json"
-    feature_cols = json.loads(feature_cols_path.read_text(encoding="utf-8"))
+    output_dir.mkdir(parents=True, exist_ok=True)
     for name, frame in splits.items():
-        dds_cols = [
-            c for c in frame.columns
-            if c.startswith(("ns_dd_", "ew_dd_", "dd_par_"))
-        ]
-        if dds_cols:
-            raise RuntimeError(f"DDS columns unexpectedly remain in {name}: {dds_cols}")
-    print(f"\nNo-DDS dataset saved to: {output_dir}")
-    print(f"Features: {len(feature_cols)}; full rows: {len(splits['full']):,}")
-    print(
-        "Positive label rate: "
-        f"{splits['full']['matches_par_contract'].mean():.1%}"
+        frame.drop(columns=dds_cols, errors="ignore").to_csv(output_dir / f"{name}.csv", index=False)
+    (output_dir / "feature_columns.json").write_text(
+        json.dumps(canonical_features, indent=2), encoding="utf-8"
     )
+    for name in ("label_encoder.pkl", "label_map.json"):
+        shutil.copy2(official_dir / name, output_dir / name)
+
+    print(
+        f"No-DDS-feature ablation data ready: {len(splits['full']):,} rows; "
+        f"{len(canonical_features)} features; same canonical-deal splits as official data."
+    )
+    print(f"Positive rate: {splits['full']['matches_par_contract'].mean():.2%}")
+    print(f"Removed DDS columns: {len(dds_cols)}")
 
 
 if __name__ == "__main__":

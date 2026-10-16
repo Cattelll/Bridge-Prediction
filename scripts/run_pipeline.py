@@ -1,129 +1,108 @@
-"""
-Full training and evaluation pipeline.
+"""Build, train, and evaluate the current binary par-contract pipeline.
 
-Stages:
-  1. Load processed dataset (or rebuild if missing)
-  2. Train RF, XGBoost, LightGBM
-  3. Evaluate on validation set
-  4. Final evaluation on test set
-  5. Save models + results
-
-Run: py -3.12 scripts/run_pipeline.py
+Uses the LIN + PBN dataset and DDS v4 cache. Splits are grouped by the
+canonical 52-card deal so duplicate deals across sources cannot cross splits.
+Run from the repository root with the project virtual environment.
 """
 
+from __future__ import annotations
+
+import json
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
+import yaml
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
-from src.preprocessing import build_dataset, load_splits
-from src.models import RFModel, XGBModel, LGBMModel
-from src.evaluation import evaluate, print_summary, save_results, compare_models
+from src.parser import PBNParser  # noqa: E402
+from src.preprocessing import build_dataset, load_splits  # noqa: E402
+from src.models import RFModel, XGBModel, LGBMModel  # noqa: E402
+from src.evaluation import evaluate, print_summary, save_results, compare_models  # noqa: E402
 
-PROCESSED_DIR = Path("data/processed")
-MODELS_DIR = Path("outputs/models")
-RESULTS_DIR = Path("outputs/results")
-MODELS_DIR.mkdir(parents=True, exist_ok=True)
-RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG = yaml.safe_load((ROOT / "configs" / "config.yaml").read_text(encoding="utf-8"))
+PROCESSED_DIR = ROOT / "data" / "processed"
+DDS_CACHE = ROOT / "data" / "combined_dds_cache_v4.csv"
+MODELS_DIR = ROOT / "outputs" / "models"
+RESULTS_DIR = ROOT / "outputs" / "results"
 
 
 def main() -> None:
-    # ------------------------------------------------------------------
-    # 1. Load dataset
-    # ------------------------------------------------------------------
-    if not (PROCESSED_DIR / "train.csv").exists():
-        print("Processed dataset not found — building...")
-        build_dataset(raw_dir="data/raw", output_dir=PROCESSED_DIR)
+    if not DDS_CACHE.exists():
+        raise FileNotFoundError(
+            f"Required label cache is missing: {DDS_CACHE}. "
+            "Build it with scripts/build_dds_cache.py first."
+        )
 
-    print("Loading dataset...")
-    df_train, df_val, df_test, feature_cols, le = load_splits(PROCESSED_DIR)
+    pbn_boards = PBNParser().parse_directory(ROOT / "data" / "raw_pbn")
+    print(f"Building binary dataset from LIN + {len(pbn_boards):,} PBN boards...")
+    build_dataset(
+        raw_dir=ROOT / "data" / "raw",
+        output_dir=PROCESSED_DIR,
+        target_col="matches_par_contract",
+        train_ratio=CONFIG["data"]["train_ratio"],
+        val_ratio=CONFIG["data"]["val_ratio"],
+        test_ratio=CONFIG["data"]["test_ratio"],
+        random_seed=CONFIG["data"]["random_seed"],
+        include_dds=True,
+        dds_cache_path=DDS_CACHE,
+        extra_boards=pbn_boards,
+    )
 
-    X_train = df_train[feature_cols].values.astype(np.float32)
-    y_train = df_train["label"].values
+    df_train, df_val, df_test, feature_cols, label_encoder = load_splits(PROCESSED_DIR)
+    X_train = df_train[feature_cols].to_numpy(dtype=np.float32)
+    y_train = df_train["label"].to_numpy()
+    X_val = df_val[feature_cols].to_numpy(dtype=np.float32)
+    y_val = df_val["label"].to_numpy()
+    X_test = df_test[feature_cols].to_numpy(dtype=np.float32)
+    y_test = df_test["label"].to_numpy()
 
-    X_val = df_val[feature_cols].values.astype(np.float32)
-    y_val = df_val["label"].values
-
-    X_test = df_test[feature_cols].values.astype(np.float32)
-    y_test = df_test["label"].values
-
-    print(f"  Train: {X_train.shape}  Val: {X_val.shape}  Test: {X_test.shape}")
-    print(f"  Features: {len(feature_cols)}  Classes: {len(le.classes_)}")
-
-    # ------------------------------------------------------------------
-    # 2. Define models
-    # ------------------------------------------------------------------
+    model_configs = CONFIG["models"]
     models = [
-        RFModel(),
-        XGBModel(),
-        LGBMModel(),
+        RFModel(**model_configs["random_forest"]),
+        XGBModel(**model_configs["xgboost"]),
+        LGBMModel(**model_configs["lightgbm"]),
     ]
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------------------
-    # 3. Train & evaluate on validation
-    # ------------------------------------------------------------------
     val_results = []
     for model in models:
         print(f"\n[TRAIN] {model.name} ...")
-        t0 = time.time()
+        started = time.time()
         model.fit(X_train, y_train)
-        elapsed = time.time() - t0
-        print(f"        Training time: {elapsed:.1f}s")
-
-        y_pred_val = model.predict(X_val)
-        y_proba_val = model.predict_proba(X_val)
-
-        res = evaluate(y_val, y_pred_val, y_proba_val, le, model_name=model.name)
-        res["train_time_sec"] = round(elapsed, 2)
-        val_results.append(res)
-        print_summary(res)
-
-        # Save model
+        elapsed = time.time() - started
         model.save(MODELS_DIR / f"{model.name.lower()}.pkl")
+        result = evaluate(y_val, model.predict(X_val), model.predict_proba(X_val), label_encoder, model.name)
+        result["train_time_sec"] = round(elapsed, 2)
+        val_results.append(result)
+        print_summary(result)
 
-    # ------------------------------------------------------------------
-    # 4. Final test evaluation (best model by val F1)
-    # ------------------------------------------------------------------
-    print("\n\n=== FINAL TEST EVALUATION ===")
+    val_table = compare_models(val_results)
+    val_table.to_csv(RESULTS_DIR / "val_comparison.csv")
+    (RESULTS_DIR / "val_summary.json").write_text(
+        json.dumps(val_results, indent=2), encoding="utf-8"
+    )
+
+    print("\n=== Final test evaluation (once, after training choices are fixed) ===")
     test_results = []
-    for model, vres in zip(models, val_results):
-        y_pred_test = model.predict(X_test)
-        y_proba_test = model.predict_proba(X_test)
-        res = evaluate(y_test, y_pred_test, y_proba_test, le, model_name=model.name)
-        test_results.append(res)
-        print_summary(res)
-        save_results(res, RESULTS_DIR / f"{model.name.lower()}_test.json")
-
-    # ------------------------------------------------------------------
-    # 5. Comparison table
-    # ------------------------------------------------------------------
-    print("\n\n=== VALIDATION COMPARISON ===")
-    val_df = compare_models(val_results)
-    print(val_df.to_string(float_format=lambda x: f"{x:.4f}"))
-    val_df.to_csv(RESULTS_DIR / "val_comparison.csv")
-
-    print("\n=== TEST COMPARISON ===")
-    test_df = compare_models(test_results)
-    print(test_df.to_string(float_format=lambda x: f"{x:.4f}"))
-    test_df.to_csv(RESULTS_DIR / "test_comparison.csv")
-
-    # ------------------------------------------------------------------
-    # 6. Feature importance (top 20 per model)
-    # ------------------------------------------------------------------
-    print("\n=== FEATURE IMPORTANCE (top 20) ===")
     for model in models:
-        importances = model.feature_importances()
-        if importances is None:
-            continue
-        top_idx = np.argsort(importances)[::-1][:20]
-        print(f"\n  {model.name}:")
-        for rank, idx in enumerate(top_idx, 1):
-            print(f"    {rank:2d}. {feature_cols[idx]:35s} {importances[idx]:.4f}")
+        result = evaluate(
+            y_test, model.predict(X_test), model.predict_proba(X_test),
+            label_encoder, model.name,
+        )
+        test_results.append(result)
+        save_results(result, RESULTS_DIR / f"{model.name.lower()}_test.json")
+        print_summary(result)
 
-    print("\nPipeline complete. Results saved to:", RESULTS_DIR)
+    compare_models(test_results).to_csv(RESULTS_DIR / "test_comparison.csv")
+    (RESULTS_DIR / "test_summary.json").write_text(
+        json.dumps(test_results, indent=2), encoding="utf-8"
+    )
+    print(f"\nPipeline complete. Results saved under {RESULTS_DIR}")
 
 
 if __name__ == "__main__":

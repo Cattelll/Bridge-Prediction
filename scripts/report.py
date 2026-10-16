@@ -29,7 +29,7 @@ METRICS = [
     ("f1_weighted",       "F1 Weighted"),
     ("f1_positive",       "F1 Positif"),
     ("roc_auc",           "ROC-AUC"),
-    ("average_precision", "PR-AUC"),
+    ("average_precision", "AP (PR-AUC)"),
 ]
 REPORT_PATH  = RESULTS_DIR / "REPORT.md"
 
@@ -156,21 +156,35 @@ def build_report() -> str:
     else:
         lines += ["## Hasil Test Set — Baseline Resmi", ""]
         lines += _metric_table(results)
-        lines += ["### Pemenang per Metrik (baseline)", ""]
+        lines += ["### Nilai tertinggi per metrik (deskriptif)", ""]
         lines += _winners(results)
 
     # ── Kandidat notebook 06 ──────────────────────────────────────────
+    selection_path = RESULTS_DIR / "nb06_summary.json"
+    if selection_path.exists():
+        selection = json.loads(selection_path.read_text(encoding="utf-8"))
+        chosen_ap = selection.get("selected_by_validation_average_precision", {})
+        chosen_acc = selection.get("selected_by_validation_accuracy", {})
+        lines += ["## Pemilihan Model", "",
+                  "AP (Average Precision) pada validation adalah kriteria utama; metrik test mengestimasi pilihan yang telah dikunci.", ""]
+        if chosen_ap:
+            lines.append(f"- **AP validation (metrik utama):** {chosen_ap.get('test_model')}; test AP {_fval(chosen_ap.get('test_metrics', {}).get('average_precision'))}, F1 macro {_fval(chosen_ap.get('test_metrics', {}).get('f1_macro'))}.")
+        if chosen_acc:
+            lines.append(f"- **Accuracy validation:** {chosen_acc.get('test_model')}; test accuracy {_fval(chosen_acc.get('test_metrics', {}).get('accuracy'))}.")
+        lines.append("")
+
     candidates = _load_csv(NB06_CSV)
     if candidates:
         lines += [
             f"## Semua Kandidat — notebook 06 ({len(candidates)} model)",
             "",
-            "*Diurutkan F1 macro. Kandidat retuning (Exp A/B/C/E/F) belum "
+            "*Skor test bersifat deskriptif; pemilihan kandidat dilakukan dari validation. "
+            "Kandidat retuning (Exp A/B/C/E/F) belum "
             "dipromosikan ke baseline resmi.*",
             "",
         ]
         lines += _metric_table(candidates)
-        lines += ["### Pemenang per Metrik (semua kandidat)", ""]
+        lines += ["### Nilai tertinggi per metrik (deskriptif; bukan seleksi model)", ""]
         lines += _winners(candidates)
 
     # ── Output files ──────────────────────────────────────────────────

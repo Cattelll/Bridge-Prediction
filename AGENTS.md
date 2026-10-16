@@ -1,5 +1,17 @@
 # AGENTS.md — Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
+
+> **Status terkini ? 2026-10-16 (menggantikan angka lama di riwayat bawah).**
+> Split kini dikelompokkan berdasarkan tanda tangan deal 52 kartu kanonik,
+> termasuk duplikat lintas file/sumber. Deduplikasi hanya membuang rekaman dengan
+> fitur dan label sama; dataset hasilnya 50.227 baris, 174 fitur, 24,56% positif,
+> split 35.161 / 7.534 / 7.532. Semua skor sebelum perbaikan split ini adalah
+> historis dan **bukan estimasi final**. Notebook resmi 01?06 telah dijalankan
+> ulang dengan DDS v4. Pemilihan model memakai validation; hasil test hanya
+> mengestimasi kandidat yang terkunci. Kandidat AP validation tertinggi
+> adalah Random Forest Exp E (test AP 0,6383; F1 macro 0,7309). Lihat README dan
+> `outputs/results/REPORT.md` untuk hasil run terbaru.
+
 ## Ringkasan Proyek
 Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
 (Random Forest, XGBoost, LightGBM) sebagai **classifier biner** yang
@@ -8,29 +20,22 @@ cocok dengan kontrak par Double-Dummy Solver, dari rekaman BBO LIN + PBN.
 (Era 36-kelas sebelum 2026-09-18 membingkainya sebagai prediksi kontrak;
 sejak 2026-09-18 proyek dibingkai sebagai **klasifikasi**, bukan prediksi.)
 
-## Status Proyek (September 2026)
+## Riwayat Status Proyek (hingga September 2026; status dan angka di bawah bersifat historis)
 **Perubahan arah penelitian (2026-09-18)**: target diganti dari klasifikasi
 36-kelas (`target_base`) menjadi **klasifikasi biner `matches_par_contract`** — apakah
 kontrak yang benar-benar dibid (auction) cocok dengan salah satu kontrak
 **par** menurut Double-Dummy Solver (level+strain+double+sisi declarer sejak
 2026-09-27). `notebooks/01-06` adalah pipeline
-resmi saat ini: 606 file `.lin` + 1.390 file `.pbn` gabungan, **174 fitur**
+resmi pada saat itu: 606 file `.lin` + 1.390 file `.pbn` gabungan, **174 fitur**
 model (164 kanonik + 10 trik DD per strain; 8 kolom par DDS dikeluarkan
 dari fitur karena jadi bahan langsung label — lihat leakage di bawah),
 **49.755 board**, target biner (24.3% cocok par / 75.7% tidak, sejak 2026-09-27).
 **Dieksekusi ulang penuh 01→06 pada 2026-09-18** — semua notebook lolos
 "Restart & Run All" berurutan tanpa error. Detail lengkap di bawah
 ("Perubahan arah penelitian — target biner `matches_par_contract` (2026-09-18)").
-**Catatan**: `scripts/run_pipeline.py` **belum diupdate** dan masih
-membangun pipeline 164-fitur/LIN-only/36-kelas yang lama — lihat peringatan
-di bawah, jangan dijalankan tanpa diupdate dulu. **Update 2026-09-24**:
-`README.md` ditulis ulang ke pipeline biner/174-fitur, `scripts/report.py`
-diupdate ke metrik biner (accuracy, F1 macro/weighted/positif, ROC-AUC,
-PR-AUC) + tabel 8 kandidat dari `nb06_final_comparison.csv`, dan
-`outputs/results/REPORT.md` di-generate ulang. `docs/SUMMARY.md` sudah
-memakai target biner. Rangkuman semua dokumen ringkasan ada di
-`docs/RESUME.md`. Yang masih basi: `docs/ARCHITECTURE.md` (top-k) dan
-`docs/FEATURES.md` (10 fitur trik DD belum didokumentasikan).
+**Pembaruan 2026-10-16:** `scripts/run_pipeline.py` sekarang membangun dataset biner LIN+PBN dari cache v4,
+mengelompokkan split berdasarkan deal 52 kartu, dan melatih baseline dari konfigurasi. Dokumentasi pipeline dan fitur
+juga telah diselaraskan dengan target biner dan 10 fitur trik DDS.
 
 **Pengetatan label `matches_par_contract` (2026-09-27)** — definisi label
 DIUBAH (menggantikan definisi level+strain di bawah): label = 1 jika kontrak
@@ -257,13 +262,9 @@ aktual (`build_dataset()`, lewat `PBNParser.parse_directory()` yang
 hanya glob sekali) tidak pernah terpengaruh — 49.755 board tetap benar
 sebelum maupun sesudah fix.
 
-> **Peringatan penting**: `scripts/run_pipeline.py` **belum diupdate** —
-> masih membangun pipeline 164-fitur/LIN-only yang lama (tanpa DDS, tanpa
-> PBN). Menjalankannya akan MENIMPA BALIK `data/processed/` dan
-> `outputs/models/` ke versi lama 10.223-board, menghapus hasil
-> konsolidasi ini. Jangan jalankan `scripts/run_pipeline.py` sampai
-> skrip ini diupdate mengikuti `notebooks/01_data_extraction.ipynb`, atau
-> jalankan ulang notebook 01→04 sesudahnya untuk memulihkan.
+> **Peringatan historis (sebelum 2026-10-16):** skrip tersebut pernah memakai
+> pipeline 164-fitur/LIN-only/36-kelas. Skrip kini sudah menggunakan LIN+PBN,
+> cache v4, label biner, dan split deal-aware.
 
 **Notebook 5 — eksperimen peningkatan baseline (2026-07-17/18)**:
 ditambahkan `notebooks/05_improvement_experiments.ipynb`, didorong oleh
@@ -809,7 +810,7 @@ notebooks_dds/                 ARSIP historis — skema 36-kelas lama (sebelum k
                                TIDAK dieksekusi ulang.
 
 scripts/
-  run_pipeline.py             Pipeline lengkap: parse → train → eval — BELUM diupdate
+  run_pipeline.py             Baseline biner LIN+PBN dengan split deal-aware
                                ke 182 fitur/PBN, jangan jalankan tanpa update (lihat
                                "Status Proyek")
   report.py                   Generate REPORT.md dari JSON hasil tersimpan

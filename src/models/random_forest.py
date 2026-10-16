@@ -1,7 +1,7 @@
 """Random Forest wrapper (BaseModel) around sklearn's RandomForestClassifier.
 
-class_weight="balanced" compensates for the long-tail class imbalance in
-target_base (35 contracts + PASS). Defaults mirror configs/config.yaml.
+class_weight="balanced" compensates for the minority positive class in
+the binary matches_par_contract task. Defaults mirror configs/config.yaml.
 """
 
 from __future__ import annotations

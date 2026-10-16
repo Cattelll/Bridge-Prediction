@@ -1,96 +1,74 @@
-# Arsitektur & Alur Pipeline
+# Arsitektur dan Alur Pipeline
 
-Dokumen ini menjelaskan bagaimana data mengalir dari file `.lin` mentah
-sampai menjadi model terlatih dan hasil evaluasi. Untuk ringkasan
-proyek lihat [README.md](../README.md); untuk daftar lengkap fitur lihat
-[FEATURES.md](FEATURES.md).
+Pipeline resmi membangun klasifikasi biner kecocokan kontrak par dari rekaman
+LIN dan PBN. Definisi label dan skema fitur berada di `src/`; notebook
+`01`?`06` mengorkestrasi ekstraksi, eksplorasi, pelatihan, dan evaluasi.
 
-## Diagram Alur
+## Alur data
 
-```
-data/raw/*.lin
-      │
-      ▼
-┌─────────────────────┐
-│ src/parser/          │  LINParser.parse_directory()
-│   lin_parser.py       │  → tokenise LIN → BoardRecord per papan
-└─────────────────────┘
-      │  list[BoardRecord]
-      ▼
-┌─────────────────────┐
-│ src/features/         │  extract_features(board)
-│   engineer.py         │  → dict 164 fitur + metadata + 3 target
-└─────────────────────┘
-      │  list[dict]
-      ▼
-┌─────────────────────┐
-│ src/preprocessing/    │  build_dataset()
-│   dataset_builder.py  │  → dedup, drop kelas <2 sampel, label encode,
-│                       │    split stratified 70/15/15
-└─────────────────────┘
-      │  train.csv / val.csv / test.csv
-      ▼                    (data/processed/)
-┌─────────────────────┐
-│ src/models/           │  RFModel / XGBModel / LGBMModel (BaseModel)
-│   *.py                │  .fit() → .pkl (outputs/models/)
-└─────────────────────┘
-      │  y_pred, y_proba
-      ▼
-┌─────────────────────┐
-│ src/evaluation/       │  evaluate() → accuracy, F1, top-k, confusion
-│   metrics.py          │  matrix, SHAP → outputs/results/*.json, *.png
-└─────────────────────┘
+```text
+data/raw/*.lin + data/raw_pbn/*.pbn
+  -> LINParser / PBNParser -> BoardRecord
+  -> 164 fitur kanonik + metadata deal dan target kontrak aktual
+  -> DDS v4: 10 fitur trik DD + kontrak par untuk membuat label biner
+  -> buang kolom par yang langsung membentuk label
+  -> deduplikasi pasangan fitur-label yang identik
+  -> StratifiedGroupKFold, grup = tanda tangan deal 52 kartu
+  -> data/processed/{train,val,test,full}.csv
+  -> RandomForest / XGBoost / LightGBM
+  -> validation untuk pemilihan konfigurasi; test untuk estimasi akhir
 ```
 
-Orkestrasi urutan di atas ada di `scripts/run_pipeline.py` (jalur non-interaktif)
-dan di notebook 01→04 (jalur eksploratif/analisis). Keduanya memanggil fungsi
-yang sama di `src/`, tidak ada logika duplikat.
+Label `matches_par_contract` bernilai 1 jika kontrak aktual cocok dengan salah
+satu kontrak par DDS pada level, strain, status double/redouble, dan sisi
+declarer (NS/EW). Cache v4 wajib karena menyimpan semua kontrak par yang
+memiliki skor sama. DDS juga menghasilkan 10 fitur jumlah trik (NS dan EW untuk
+masing-masing strain); fitur ini tetap dapat dipakai setelah kolom par yang
+menurunkan label dikeluarkan.
 
-## Tanggung Jawab Modul
+## Pencegahan kebocoran split
 
-| Modul | Tanggung jawab | Tidak melakukan |
-|-------|----------------|------------------|
-| `src/parser/lin_parser.py` | Tokenise teks LIN, rekonstruksi 4 tangan (termasuk infer tangan ke-4 yang hilang), derive kontrak dari lelang (level, strain, declarer, doubled/redoubled) | Tidak menghitung fitur ML apa pun |
-| `src/features/engineer.py` | Hitung 164 fitur numerik/biner dari `BoardRecord`, plus 3 kolom target | Tidak melakukan parsing atau I/O file |
-| `src/preprocessing/dataset_builder.py` | Gabungkan parsing+ekstraksi banyak file, bersihkan duplikat & kelas langka, encode label, split stratified, simpan artefak (`feature_columns.json`, `label_encoder.pkl`) | Tidak melatih model |
-| `src/models/*.py` | Wrapper tipis (`BaseModel`) di atas sklearn/XGBoost/LightGBM: `fit`, `predict`, `predict_proba`, `save`/`load` | Tidak melakukan feature engineering atau tuning hyperparameter otomatis |
-| `src/evaluation/metrics.py` | Hitung metrik (accuracy, precision/recall/F1 macro & weighted, top-k), confusion matrix, simpan JSON | Tidak melatih atau memuat model |
+Setiap deal diberi `_deal_key` dari kartu pada keempat tangan dalam urutan
+kanonik. Identitas ini tidak bergantung pada nama file, nomor papan, format
+LIN/PBN, atau urutan kartu dalam file. `StratifiedGroupKFold` membagi berdasarkan
+`_deal_key`, sehingga salinan deal dari sumber berbeda tetap berada pada satu
+partisi. Builder memeriksa overlap key antar train, validation, dan test sebelum
+menyimpan CSV. `_deal_key` hanya metadata dan tidak pernah menjadi fitur model.
 
-## Keputusan Desain Penting
+Pengulangan dengan fitur **dan label** yang sama dihapus. Baris dengan fitur
+ringkas sama tetapi label berbeda dipertahankan sebagai observasi berbeda.
 
-- **Tree-based ensembles saja (RF/XGBoost/LightGBM).** Cocok untuk fitur
-  tabular heterogen (HCP, panjang suit, one-hot) tanpa perlu scaling/embedding —
-  lihat batasan "di luar ruang lingkup" di [CLAUDE.md](../CLAUDE.md) untuk
-  alasan neural network/RL sengaja tidak dipakai.
-- **`target_base` (36 kelas) sebagai target utama**, bukan `target` (66 kelas
-  dengan marker `x`/`xx`). Marker doubled/redoubled jarang muncul dan akan
-  memperparah class imbalance yang sudah berat; `target` disimpan untuk
-  analisis tambahan saja.
-- **Kelas dengan <2 sampel dibuang** sebelum split (`dataset_builder.py`)
-  agar stratified split & label kontigu (dibutuhkan XGBoost) tetap valid.
-- **Seed 42 di semua tahap acak** (split data, `random_state` tiap model) —
-  jangan diubah, karena hasil di notebook 03/04 dan tabel di README/CLAUDE.md
-  bergantung pada split yang sama persis.
-- **Urutan kolom fitur tetap** (`feature_columns.json`) — model `.pkl` yang
-  sudah tersimpan mengasumsikan urutan kolom input yang sama.
-- **Tangan ke-4 (biasanya East) di-derive dari 52 kartu dikurangi 3 tangan
-  yang diketahui** (`_derive_missing_hand`) karena beberapa file LIN BBO tidak
-  menuliskan tangan East secara eksplisit.
+## Modul utama
 
-## BaseModel Interface
+| Modul | Tanggung jawab |
+|---|---|
+| `src/parser/lin_parser.py` | Parse LIN, kartu, auction, kontrak dan metadata board |
+| `src/parser/pbn_parser.py` | Parse PBN ke bentuk `BoardRecord` yang sama |
+| `src/features/engineer.py` | Membuat 164 fitur kanonik dan kolom target historis |
+| `src/features/dds.py` | Menghitung/membaca fitur DDS dan kontrak par |
+| `src/preprocessing/dataset_builder.py` | Membuat label, menghapus kolom leakage, deduplikasi dan split grup deal |
+| `src/models/` | Wrapper Random Forest, XGBoost, dan LightGBM |
+| `src/evaluation/metrics.py` | Accuracy, precision/recall/F1, ROC-AUC, dan Average Precision |
+| `scripts/run_pipeline.py` | Membangun dataset biner LIN+PBN dan melatih baseline dari config |
 
-Semua model (`RFModel`, `XGBModel`, `LGBMModel`) mengimplementasikan
-`src/models/base.py::BaseModel`:
+## Evaluasi
 
-```python
-fit(X_train, y_train) -> None
-predict(X) -> np.ndarray
-predict_proba(X) -> np.ndarray
-feature_importances() -> np.ndarray | None
-save(path) -> None
-load(path) -> BaseModel        # classmethod
+Validation dipakai memilih model dan threshold. Test dipakai sekali untuk
+melaporkan performa pilihan yang telah dikunci. Tabel beberapa kandidat pada
+test bersifat deskriptif dan tidak boleh dipakai untuk memilih pemenang.
+
+Untuk fokus kelas positif, laporkan Average Precision (AP; disebut PR-AUC di
+sebagian plot), ROC-AUC sebagai metrik ranking tambahan, serta F1/precision/recall
+pada threshold yang dipilih di validation. Angka proporsi kelas dan rasio
+mayoritas:minoritas perlu dilaporkan bersama metrik.
+
+## Perintah pipeline
+
+```powershell
+python scripts/build_dds_cache.py  # hanya jika cache v4 belum tersedia
+python scripts/run_pipeline.py    # membangun split deal-aware dan melatih baseline
 ```
 
-Kontrak yang sama ini memungkinkan `scripts/run_pipeline.py`, notebook, dan
-`src/evaluation/metrics.py::compare_models()` memperlakukan ketiga algoritma
-secara seragam.
+Notebook 01?06 menyediakan EDA dan eksperimen tambahan. `scripts/run_pipeline.py`
+menggunakan target biner dan cache v4; jangan memakai pipeline multiclass lama
+dari eksperimen arsip.

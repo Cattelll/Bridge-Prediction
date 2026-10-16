@@ -208,27 +208,23 @@ pengukuran waktu khusus mencatat 3,0 s, jadi angka besar itu kemungkinan
 kontensi CPU sesaat (lihat catatan keandalan di CLAUDE.md), bukan sifat
 algoritmanya.
 
-### Apa artinya di hasil (test set, baseline)
+### Hasil run terbaru (test set, baseline)
 
-| Model | Accuracy | F1 macro | Recall kelas 1 | Precision kelas 1 | Porsi diklasifikasikan "1" |
-|---|---|---|---|---|---|
-| Random Forest | 82,3% | 0,754 | 60,3% | 64,7% | 22,6% |
-| XGBoost | **83,0%** | 0,729 | **44,9%** | **75,3%** | 14,5% |
-| LightGBM | 81,5% | **0,761** | **70,1%** | 60,2% | 28,3% |
+| Model | Accuracy | F1 macro | Recall kelas 1 | Precision kelas 1 | AP |
+|---|---:|---:|---:|---:|---:|
+| Random Forest | 80,32% | 0,7095 | 47,9% | 63,1% | 0,5888 |
+| XGBoost | 80,89% | 0,6947 | 40,2% | 69,1% | 0,5946 |
+| LightGBM | 79,16% | 0,7295 | 63,7% | 56,7% | 0,6285 |
 
-(Porsi kelas 1 yang sebenarnya di test set = 24,3%.)
+Prevalensi kelas 1 pada test sekitar 24,5%. AP adalah Average Precision (skor
+`average_precision_score`), bukan luas trapezoid interpolasi PR. Angka ini berasal
+dari split deal-aware terbaru (50.227 baris); angka run sebelum 2026-10-16 tidak
+dipakai sebagai hasil final karena deal yang sama dapat menyeberang split.
 
-- **XGBoost baseline** jarang mengklasifikasikan board sebagai "cocok par" (14,5%, jauh di bawah 24,3%).
-  Kalau mengklasifikasikan "1" biasanya benar (precision tinggi), tapi banyak board cocok
-  par yang terlewat (recall 45%). Penyebabnya adalah **tidak adanya bobot
-  kelas**, bukan algoritmanya. Setelah diberi bobot (Eksperimen B/F),
-  XGBoost menyamai atau melampaui dua algoritma lain.
-- **LightGBM** paling sering mengklasifikasikan "1" (28,3%), sehingga recall tertinggi
-  dan F1 macro tertinggi di antara baseline, dengan konsekuensi accuracy
-  sedikit lebih rendah.
-- **Random Forest** berada di tengah. Walaupun sama-sama memakai bobot
-  balanced, rata-rata banyak pohon dalam membuat peluangnya lebih "hati-hati"
-  dibanding LightGBM, sehingga lebih jarang melewati ambang 0,5.
+Pemilihan utama kandidat retuned dilakukan di validation berdasarkan AP: Random Forest Exp E tertinggi.
+LightGBM Exp C tertinggi pada F1 macro sekunder; XGBoost Exp A tertinggi pada accuracy. Tabel lengkap dan nilai test
+kandidat tersebut ada di [EXPERIMENTS.md](EXPERIMENTS.md). Jangan memilih model
+dari peringkat test.
 
 ### Ringkasan singkat perbedaannya
 
