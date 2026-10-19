@@ -1,6 +1,6 @@
 # Ablasi Fitur Trik DDS - 2026-10-16
 
-Notebook resmi: [`04_dds_feature_ablation.ipynb`](../../../notebooks/04_dds_feature_ablation.ipynb)
+Catatan eksperimen historis; proses aktif saat ini membangun kedua varian dataset dari Notebook 01.
 
 ## Rancangan
 
@@ -44,6 +44,6 @@ exact. SHAP menunjukkan perilaku model, bukan sebab-akibat.
 - `outputs/shap_mean_absolute_importance.csv`, `outputs/shap_top_features.png`
 - `outputs/best_model_confusion_matrix.png`, `outputs/summary.json`
 
-Model representatif untuk confusion matrix dipilih berdasarkan AP validation. Notebook resmi 07 akan membangun proyeksi tanpa DDS otomatis bila dataset belum tersedia; untuk membangunnya terpisah, jalankan `scripts/build_dataset_no_dds.py`.
+Model representatif untuk confusion matrix dipilih berdasarkan AP validation. Notebook 01 membangun dataset dengan DDS dan noDDS bersama-sama, mempertahankan label serta split yang identik. Skrip `scripts/build_datasets.py` juga membangun kedua keluaran melalui jalur yang sama.
 Skrip membangun ulang split resmi dari sumber LIN+PBN dan cache DDS v4 sebelum
 membuat proyeksi tanpa fitur DDS; model tidak dilatih oleh skrip tersebut.

@@ -14,11 +14,12 @@ flowchart TD
   B2 --> C
   C --> D[Ekstraksi 164 fitur kanonik]
   D --> E[(DDS v4 untuk label)]
-  E --> F[Dataset tanpa fitur trik DDS: 164 fitur]
-  F --> G[Split deal-aware]
-  G --> H1[Random Forest]
-  G --> H2[XGBoost]
-  G --> H3[LightGBM]
+  E --> F[Split data deal-aware<br/>satu assignment untuk kedua varian]
+  F --> F1[(Dataset DDS: 174 fitur)]
+  F --> F2[(Dataset noDDS: 164 fitur)]
+  F2 --> H1[Random Forest]
+  F2 --> H2[XGBoost]
+  F2 --> H3[LightGBM]
   H1 --> I[Analisis validation dan interpretasi]
   H2 --> I
   H3 --> I
@@ -26,11 +27,7 @@ flowchart TD
   J --> K([Selesai])
 ```
 
-Dataset ekstraksi menyimpan 174 fitur termasuk 10 fitur jumlah trik DDS.
-Notebook 04 membuat proyeksi 164 fitur tanpa kolom trik DDS dan memverifikasi
-label, urutan board, serta partisi. Notebook 04 tidak melatih model. Notebook
-05 melatih baseline pada proyeksi itu; Notebook 06–08 mengevaluasi baseline
-dan kandidat pada fitur yang sama.
+Notebook 03 menghitung label DDS, melakukan deduplikasi dan split deal-aware sekali, lalu menyimpan dua proyeksi fitur dengan assignment split yang sama. Dataset `data/processed/` menyimpan 174 fitur (164 kanonik + 10 trik DDS); dataset `data/processed_no_dds/` menyimpan 164 fitur kanonik tanpa kolom trik maupun rincian par DDS. Notebook 04 melatih baseline pada noDDS; Notebook 05 menganalisis hasil baseline, Notebook 06 menjalankan eksperimen, dan Notebook 07 melakukan evaluasi final.
 
 ## Label, fitur, dan split
 
@@ -43,7 +40,7 @@ Split dikelompokkan menurut identitas kanonik deal 52 kartu. Deal yang sama
 tidak melintasi train, validation, dan test. Dataset aktif berisi 50.227 baris
 dengan 35.161 train, 7.534 validation, dan 7.532 test. Angka metrik yang
 masih tersimpan berasal dari run lama dengan 174 fitur; perbarui dengan
-menjalankan Notebook 05–08 berurutan.
+menjalankan Notebook 04–07 berurutan.
 
 ## Modul utama
 

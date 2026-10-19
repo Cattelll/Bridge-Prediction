@@ -1,4 +1,4 @@
-"""Build, train, and evaluate the current binary par-contract pipeline.
+"""Build both DDS/noDDS datasets, then train and evaluate the binary par-contract pipeline on noDDS features.
 
 Uses the LIN + PBN dataset and DDS v4 cache. Splits are grouped by the
 canonical 52-card deal so duplicate deals across sources cannot cross splits.
@@ -25,6 +25,7 @@ from src.evaluation import evaluate, print_summary, save_results, compare_models
 
 CONFIG = yaml.safe_load((ROOT / "configs" / "config.yaml").read_text(encoding="utf-8"))
 PROCESSED_DIR = ROOT / "data" / "processed"
+PROCESSED_NO_DDS_DIR = ROOT / "data" / "processed_no_dds"
 DDS_CACHE = ROOT / "data" / "combined_dds_cache_v4.csv"
 MODELS_DIR = ROOT / "outputs" / "models"
 RESULTS_DIR = ROOT / "outputs" / "results"
@@ -42,6 +43,7 @@ def main() -> None:
     build_dataset(
         raw_dir=ROOT / "data" / "raw",
         output_dir=PROCESSED_DIR,
+        no_dds_output_dir=PROCESSED_NO_DDS_DIR,
         target_col="matches_par_contract",
         train_ratio=CONFIG["data"]["train_ratio"],
         val_ratio=CONFIG["data"]["val_ratio"],
@@ -52,7 +54,7 @@ def main() -> None:
         extra_boards=pbn_boards,
     )
 
-    df_train, df_val, df_test, feature_cols, label_encoder = load_splits(PROCESSED_DIR)
+    df_train, df_val, df_test, feature_cols, label_encoder = load_splits(PROCESSED_NO_DDS_DIR)
     X_train = df_train[feature_cols].to_numpy(dtype=np.float32)
     y_train = df_train["label"].to_numpy()
     X_val = df_val[feature_cols].to_numpy(dtype=np.float32)

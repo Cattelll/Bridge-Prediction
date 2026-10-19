@@ -111,6 +111,7 @@ def build_dataset(
     include_dds_features: bool = True,
     dds_cache_path: str | Path | None = None,
     extra_boards: list | None = None,
+    no_dds_output_dir: str | Path | None = None,
 ) -> dict[str, pd.DataFrame]:
     """
     Parse LIN files, extract features, clean, encode, and split.
@@ -139,8 +140,18 @@ def build_dataset(
         extra_boards   : optional list of additional BoardRecord objects (e.g. from
                          PBNParser) to fold in alongside the parsed LIN boards —
                          for supplementary data sources beyond data/raw/*.lin
+        no_dds_output_dir: optional second output directory. When supplied with
+                         include_dds=True and include_dds_features=True, save a
+                         no-DDS-feature view from the exact same deduplicated
+                         rows and train/val/test assignments. The label still
+                         uses DDS; DDS columns are removed only from this view.
     """
     assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-9
+    if no_dds_output_dir is not None and include_dds and not include_dds_features:
+        raise ValueError(
+            "Untuk menyimpan dataset DDS dan noDDS berpasangan, gunakan "
+            "include_dds_features=True; noDDS akan ditulis ke output kedua."
+        )
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -347,6 +358,37 @@ def build_dataset(
     feat_path = output_dir / "feature_columns.json"
     feat_path.write_text(json.dumps(feature_cols, indent=2))
     print(f"      Feature cols saved: {feat_path}")
+
+    # Optionally materialize the no-DDS-feature dataset at the same time.
+    # Rows, labels, and deal-aware split assignments are shared exactly;
+    # only DDS-derived columns are removed from the second saved view.
+    if no_dds_output_dir is not None:
+        if not include_dds:
+            raise ValueError("no_dds_output_dir requires include_dds=True to build the DDS-derived label")
+        no_dds_output_dir = Path(no_dds_output_dir)
+        no_dds_output_dir.mkdir(parents=True, exist_ok=True)
+        dds_prefixes = ("ns_dd_", "ew_dd_", "dd_par_")
+        dds_columns = [col for col in splits["full"].columns if col.startswith(dds_prefixes)]
+        no_dds_features = [col for col in feature_cols if not col.startswith(dds_prefixes)]
+
+        for name, split_df in splits.items():
+            split_df.drop(columns=dds_columns, errors="ignore").to_csv(
+                no_dds_output_dir / f"{name}.csv", index=False
+            )
+        (no_dds_output_dir / "feature_columns.json").write_text(
+            json.dumps(no_dds_features, indent=2), encoding="utf-8"
+        )
+        for name in ("label_encoder.pkl", "label_map.json"):
+            source = output_dir / name
+            target = no_dds_output_dir / name
+            if name.endswith(".pkl"):
+                import shutil
+                shutil.copy2(source, target)
+            else:
+                target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+
+        print(f"      No-DDS view saved: {no_dds_output_dir}")
+        print(f"      No-DDS features: {len(no_dds_features)}; removed DDS columns: {len(dds_columns)}")
 
     return splits
 

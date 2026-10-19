@@ -44,14 +44,14 @@ ukuran performa.
   0,7361; AP 0,6326.
 
 Tabel delapan kandidat test ada di
-[`outputs/results/nb06_final_comparison.csv`](../outputs/results/nb06_final_comparison.csv)
+[`outputs/results/nb07_final_comparison.csv`](../outputs/results/nb06_final_comparison.csv)
 dan bersifat deskriptif. Hasil sebelum split global deal-aware pada 2026-10-16
 tidak dianggap sebagai estimasi final.
 
 ## Eksperimen historis: perbandingan 164 dan 174 fitur
 
-Notebook [`04_dds_feature_ablation.ipynb`](../notebooks/04_dds_feature_ablation.ipynb) dan catatan [`2026-10-16/no_dds_feature_ablation`](../experiments/2026-10-16/no_dds_feature_ablation/README.md) mempertahankan label DDS untuk kedua kondisi, tetapi membandingkan 164 fitur
-kanonik dengan 174 fitur yang menambah trik DD. Pada test, AP naik **15,32 pp**
+Catatan historis [`2026-10-16/no_dds_feature_ablation`](../experiments/2026-10-16/no_dds_feature_ablation/README.md) mencatat perbandingan yang mempertahankan label DDS untuk kedua kondisi, yaitu 164 fitur
+kanonik dengan 174 fitur yang menambah trik DD. Notebook ablation terpisah tersebut sudah dihapus; Notebook 03 kini membangun kedua varian dataset dalam satu proses dengan split identik. Pada test, AP naik **15,32 pp**
 (RF), **15,60 pp** (XGBoost), dan **21,05 pp** (LightGBM). F1 macro naik 10,96,
 15,02, dan 9,27 pp berturut-turut.
 

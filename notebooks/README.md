@@ -1,22 +1,20 @@
-# Urutan Notebook Penelitian
+# Pipeline Notebook Penelitian
 
-Pipeline utama memakai dataset tanpa fitur jumlah trik DDS untuk pemodelan.
-DDS tetap digunakan untuk membentuk label matches_par_contract. Sepuluh fitur
-trik DDS tidak dimasukkan ke fitur model.
+Notebook 01 memeriksa preprocessing dan parsing sumber LIN/PBN. Notebook 02 mengeksplorasi contoh record mentah. **Notebook 03 menjalankan tahap DDS lalu split data**: DDS v4 membentuk label, builder membuat satu assignment split deal-aware, lalu menulis dua proyeksi dataset dari board dan split yang sama:
+
+- `data/processed/`: 174 fitur (164 fitur kanonik + 10 nilai trik DDS).
+- `data/processed_no_dds/`: 164 fitur kanonik untuk pemodelan utama.
+
+Dataset noDDS tidak memberikan nilai trik atau rincian par DDS sebagai input model, tetapi tetap mempertahankan label yang dibuat dengan DDS. Hanya noDDS yang diteruskan ke tiga model utama. Notebook 03 memeriksa kesetaraan split dan profil fitur noDDS; notebook 05 dan 06 menangani analisis hasil model.
 
 | Urutan | Notebook | Tahap penelitian |
 |---|---|---|
-| 01 | 01_data_extraction.ipynb | Parsing LIN/PBN, preprocessing, ekstraksi, DDS untuk label, dan split deal-aware. |
-| 02 | 04_dds_feature_ablation.ipynb | Menyiapkan dan memeriksa proyeksi 164 fitur tanpa fitur trik DDS; tidak melatih model. |
-| 03 | 02_data_exploration.ipynb | Pemeriksaan tabel board dan dataset noDDS. |
-| 04 | 03_feature_analysis.ipynb | Pemeriksaan distribusi 164 fitur noDDS sebelum pemodelan. |
-| 05 | 05_modeling.ipynb | Melatih baseline Random Forest, XGBoost, dan LightGBM pada dataset tanpa fitur DDS. |
-| 06 | 06_evaluation.ipynb | Evaluasi baseline, confusion matrix, feature importance, dan SHAP. |
-| 07 | 07_improvement_experiments.ipynb | Retuning kandidat dan threshold berdasarkan validation. |
-| 08 | 08_final_evaluation.ipynb | Memilih kandidat berdasarkan validation dan melaporkan evaluasi test. |
+| 01 | 01_data_extraction.ipynb | Preprocessing dan parsing LIN/PBN; melihat contoh board hasil normalisasi. |
+| 02 | 02_data_exploration.ipynb | Eksplorasi sampel record mentah LIN/PBN sebelum feature engineering. |
+| 03 | 03_dds_dataset_split.ipynb | DDS untuk label, split deal-aware, pembuatan dua proyeksi dataset, dan profil data noDDS. |
+| 04 | 04_modeling.ipynb | Melatih baseline Random Forest, XGBoost, dan LightGBM pada noDDS. |
+| 05 | 05_evaluation.ipynb | Analisis baseline di validation: metrik, confusion matrix, feature importance, dan SHAP. |
+| 06 | 06_improvement_experiments.ipynb | Eksperimen model dan threshold; seleksi hanya berdasarkan validation. |
+| 07 | 07_final_evaluation.ipynb | Mengunci kandidat dari validation dan menjalankan evaluasi test final satu kali. |
 
-Jalankan notebook sesuai urutan pipeline pada kolom pertama dari repo root.
-Notebook 04 (file bernama 04_dds_feature_ablation.ipynb) menyiapkan
-data/processed_no_dds/ dari hasil Notebook 01 jika proyeksi belum tersedia.
-Notebook 02–03 mengeksplorasi dataset tersebut, lalu Notebook 05–08 memakai
-partisi dan fitur yang sama.
+Jalankan notebook berurutan dari repo root. Notebook 03 membaca cache DDS v4 dan menulis kedua dataset secara berpasangan. Untuk membangunnya dari command line, jalankan `python scripts/build_datasets.py`; skrip ini juga menghasilkan kedua varian. Notebook 04–07 menggunakan `data/processed_no_dds/` untuk modeling dan evaluasi.

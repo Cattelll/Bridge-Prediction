@@ -2,14 +2,15 @@
 
 
 > **Status terkini per 2026-10-19.** Dataset sumber hasil ekstraksi berisi
-> 50.227 baris dengan 174 fitur; dataset utama untuk pemodelan adalah proyeksi
-> 164 fitur tanpa sepuluh fitur jumlah trik DDS. DDS tetap membentuk label.
-> Alur notebook: 01 ekstraksi + DDS/label/split; 02–03 eksplorasi; 04
-> menyiapkan dataset tanpa fitur trik DDS; 05 melatih baseline; 06 mengevaluasi
-> baseline; 07 eksperimen kandidat; 08 evaluasi final. Notebook 05–08 memakai
-> data/processed_no_dds/. Skor tersimpan di bawah berasal dari run lama 174
-> fitur dan harus diperbarui setelah rerun modeling.
->
+> 50.227 baris dan 174 fitur, dengan 24,56% positif; split deal-aware adalah
+> 35.161 / 7.534 / 7.532. Notebook 03 membangun dua dataset sekaligus dari
+> board, label, dan split yang sama: `data/processed/` (174 fitur termasuk 10
+> fitur trik DDS) dan `data/processed_no_dds/` (164 fitur kanonik). DDS tetap
+> dipakai untuk label, tetapi fitur DDS tidak diberikan ke model utama.
+> Urutan notebook aktif: 01–02 untuk parsing dan eksplorasi sumber; 03 membangun DDS, dataset, split, dan analisis fitur; 04 modeling,
+> 05 evaluasi baseline, 06 eksperimen, dan 07 evaluasi final. Hasil tersimpan
+> masih historis dari model 174 fitur; metrik noDDS perlu dihasilkan ulang.
+
 ## Ringkasan Proyek
 Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
 (Random Forest, XGBoost, LightGBM) sebagai **classifier biner** yang
@@ -574,7 +575,7 @@ dengan `target_base`.
 (`dd_par_level`, `dd_par_denom_S/H/D/C/N`, `dd_par_score`,
 `dd_par_declarer_is_ns`) dikeluarkan permanen dari `feature_columns.json`
 (`_LEAKAGE_COLS` di `dataset_builder.py`) — tetap tersimpan di CSV untuk
-analisis/audit (lihat korelasi di `notebooks/03_feature_analysis.ipynb` bagian
+analisis/audit (lihat korelasi di `notebooks/03_dds_dataset_split.ipynb` bagian
 7, yang menunjukkan `dd_par_level`/`dd_par_declarer_is_ns` berkorelasi jauh
 lebih kuat dengan `matches_par_contract` dibanding fitur lain manapun — persis seperti
 diharapkan, karena keduanya membentuk label). 10 kolom trik DD per strain
@@ -793,15 +794,13 @@ src/
 
 notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; target biner
                                matches_par_contract sejak 2026-09-18; re-run penuh 2026-09-18)
-  01_data_extraction.ipynb    Parsing LIN+PBN + DDS → dataset CSV (data/processed/),
-                               target_col='matches_par_contract'
+  01_data_extraction.ipynb    Inspeksi preprocessing dan contoh parsing LIN/PBN
   02_data_exploration.ipynb Pemeriksaan tabel board dan dataset
-  03_feature_analysis.ipynb   Analisis distribusi fitur, target, dan sumber data
-  04_dds_feature_ablation.ipynb Perbandingan 164 vs 174 fitur
-  05_modeling.ipynb           Baseline RF/XGBoost/LightGBM dengan hyperparameter configs/config.yaml
-  06_evaluation.ipynb         Evaluasi baseline (test), confusion matrix, SHAP, radar
-  07_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning hyperparameter + class weighting model tunggal)
-  08_final_evaluation.ipynb   Laporan komprehensif 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
+  03_dds_dataset_split.ipynb   DDS, dua dataset, split deal-aware, dan analisis fitur noDDS
+  04_modeling.ipynb           Baseline RF/XGBoost/LightGBM pada data noDDS, konfigurasi dari configs/config.yaml
+  05_evaluation.ipynb         Evaluasi baseline, confusion matrix, SHAP, radar
+  06_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning + threshold)
+  07_final_evaluation.ipynb   Laporan akhir kandidat dan estimasi test
 
 notebooks_dds/                 ARSIP historis — skema 36-kelas lama (sebelum konsolidasi
                                2026-07-17 dan sebelum perubahan target biner 2026-09-18).

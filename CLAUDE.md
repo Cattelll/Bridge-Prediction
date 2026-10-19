@@ -1,18 +1,15 @@
 # CLAUDE.md — Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
 
-> **Status terkini per 2026-10-19 (menggantikan angka lama di riwayat bawah).**
-> Split kini dikelompokkan berdasarkan tanda tangan deal 52 kartu kanonik,
-> termasuk duplikat lintas file/sumber. Deduplikasi hanya membuang rekaman dengan
-> fitur dan label sama; dataset hasilnya 50.227 baris, 174 fitur, 24,56% positif,
-> split 35.161 / 7.534 / 7.532. Semua skor sebelum perbaikan split ini adalah
-> historis dan **bukan estimasi final**. Notebook stabil dijalankan dengan urutan
-> 01, 02, 03, 04, 05, 06, 07, 08 (lihat `notebooks/README.md`); Notebook 04
-> membandingkan dataset 174 fitur DDS dan 164 fitur tanpa trik DDS pada label/split identik.
-> Rujukan notebook pada riwayat di bawah memakai penomoran sebelum 2026-10-19. Pemilihan model memakai validation; hasil test hanya
-> mengestimasi kandidat yang terkunci. Kandidat AP validation tertinggi
-> adalah Random Forest Exp E (test AP 0,6383; F1 macro 0,7309). Lihat README dan
-> `outputs/results/REPORT.md` untuk hasil run terbaru.
+> **Status terkini per 2026-10-19.** Dataset sumber hasil ekstraksi berisi
+> 50.227 baris dan 174 fitur, dengan 24,56% positif; split deal-aware adalah
+> 35.161 / 7.534 / 7.532. Notebook 03 membangun dua dataset sekaligus dari
+> board, label, dan split yang sama: `data/processed/` (174 fitur termasuk 10
+> fitur trik DDS) dan `data/processed_no_dds/` (164 fitur kanonik). DDS tetap
+> dipakai untuk label, tetapi fitur DDS tidak diberikan ke model utama.
+> Urutan notebook aktif: 01–02 untuk parsing dan eksplorasi sumber; 03 membangun DDS, dataset, split, dan analisis fitur; 04 modeling,
+> 05 evaluasi baseline, 06 eksperimen, dan 07 evaluasi final. Hasil tersimpan
+> masih historis dari model 174 fitur; metrik noDDS perlu dihasilkan ulang.
 
 ## Ringkasan Proyek
 Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
@@ -578,7 +575,7 @@ dengan `target_base`.
 (`dd_par_level`, `dd_par_denom_S/H/D/C/N`, `dd_par_score`,
 `dd_par_declarer_is_ns`) dikeluarkan permanen dari `feature_columns.json`
 (`_LEAKAGE_COLS` di `dataset_builder.py`) — tetap tersimpan di CSV untuk
-analisis/audit (lihat korelasi di `notebooks/03_feature_analysis.ipynb` bagian
+analisis/audit (lihat korelasi di `notebooks/03_dds_dataset_split.ipynb` bagian
 7, yang menunjukkan `dd_par_level`/`dd_par_declarer_is_ns` berkorelasi jauh
 lebih kuat dengan `matches_par_contract` dibanding fitur lain manapun — persis seperti
 diharapkan, karena keduanya membentuk label). 10 kolom trik DD per strain
@@ -797,15 +794,13 @@ src/
 
 notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; target biner
                                matches_par_contract sejak 2026-09-18; re-run penuh 2026-09-18)
-  01_data_extraction.ipynb    Parsing LIN+PBN + DDS → dataset CSV (data/processed/),
-                               target_col='matches_par_contract'
+  01_data_extraction.ipynb    Inspeksi preprocessing dan contoh parsing LIN/PBN
   02_data_exploration.ipynb Pemeriksaan tabel board dan dataset
-  03_feature_analysis.ipynb   Analisis distribusi fitur, target, dan sumber data
-  04_dds_feature_ablation.ipynb Perbandingan 164 vs 174 fitur
-  05_modeling.ipynb           Baseline RF/XGBoost/LightGBM dengan hyperparameter configs/config.yaml
-  06_evaluation.ipynb         Evaluasi baseline (test), confusion matrix, SHAP, radar
-  07_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning hyperparameter + class weighting model tunggal)
-  08_final_evaluation.ipynb   Laporan komprehensif 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
+  03_dds_dataset_split.ipynb   DDS, dua dataset, split deal-aware, dan analisis fitur noDDS
+  04_modeling.ipynb           Baseline RF/XGBoost/LightGBM pada data noDDS, konfigurasi dari configs/config.yaml
+  05_evaluation.ipynb         Evaluasi baseline, confusion matrix, SHAP, radar
+  06_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning + threshold)
+  07_final_evaluation.ipynb   Laporan akhir kandidat dan estimasi test
 
 notebooks_dds/                 ARSIP historis — skema 36-kelas lama (sebelum konsolidasi
                                2026-07-17 dan sebelum perubahan target biner 2026-09-18).
