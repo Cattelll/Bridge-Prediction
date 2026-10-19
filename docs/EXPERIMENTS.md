@@ -2,7 +2,9 @@
 
 ## Status data dan label
 
-Run terbaru memakai label `matches_par_contract` dari DDS v4. Nilai 1 berarti
+Alur utama per 2026-10-19 memakai 164 fitur kanonik tanpa fitur jumlah trik DDS. Tabel metrik di bawah adalah catatan run sebelumnya dengan 174 fitur, bukan hasil final alur utama yang baru.
+
+Run terdahulu memakai label `matches_par_contract` dari DDS v4. Nilai 1 berarti
 kontrak aktual cocok dengan salah satu kontrak par pada level, strain, status
 double/redouble, dan sisi declarer. Dataset berisi 50.227 observasi, 174 fitur,
 dan prevalensi positif 24,56% (negatif:positif sekitar 3,1:1). Split 35.161 /
@@ -21,7 +23,7 @@ adalah metrik pelengkap. Threshold keputusan ditentukan di validation. Test
 hanya mengestimasi kandidat yang telah dikunci; peringkat semua kandidat pada
 test bersifat deskriptif.
 
-### Baseline pada test
+### Baseline historis 174 fitur pada test
 
 | Model | Accuracy | F1 macro | F1 positif | ROC-AUC | AP |
 |---|---:|---:|---:|---:|---:|
@@ -32,7 +34,7 @@ test bersifat deskriptif.
 Baseline mayoritas sekitar 75,5% accuracy; jangan jadikan accuracy saja sebagai
 ukuran performa.
 
-### Kandidat terpilih berdasarkan validation
+### Kandidat run historis berdasarkan validation
 
 - **Pilihan utama, AP validation tertinggi:** Random Forest Exp E. AP validation
   0,6524; pada test AP 0,6383, F1 macro 0,7309, accuracy 0,8109.
@@ -46,7 +48,7 @@ Tabel delapan kandidat test ada di
 dan bersifat deskriptif. Hasil sebelum split global deal-aware pada 2026-10-16
 tidak dianggap sebagai estimasi final.
 
-## Ablasi 10 fitur trik DDS
+## Eksperimen historis: perbandingan 164 dan 174 fitur
 
 Notebook [`04_dds_feature_ablation.ipynb`](../notebooks/04_dds_feature_ablation.ipynb) dan catatan [`2026-10-16/no_dds_feature_ablation`](../experiments/2026-10-16/no_dds_feature_ablation/README.md) mempertahankan label DDS untuk kedua kondisi, tetapi membandingkan 164 fitur
 kanonik dengan 174 fitur yang menambah trik DD. Pada test, AP naik **15,32 pp**

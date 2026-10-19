@@ -1,19 +1,15 @@
 # AGENTS.md — Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
 
-> **Status terkini per 2026-10-19 (menggantikan angka lama di riwayat bawah).**
-> Split kini dikelompokkan berdasarkan tanda tangan deal 52 kartu kanonik,
-> termasuk duplikat lintas file/sumber. Deduplikasi hanya membuang rekaman dengan
-> fitur dan label sama; dataset hasilnya 50.227 baris, 174 fitur, 24,56% positif,
-> split 35.161 / 7.534 / 7.532. Semua skor sebelum perbaikan split ini adalah
-> historis dan **bukan estimasi final**. Notebook stabil dijalankan dengan urutan
-> 01, 02, 03, 04, 05, 06, 07, 08 (lihat `notebooks/README.md`); Notebook 04
-> membandingkan dataset 174 fitur DDS dan 164 fitur tanpa trik DDS pada label/split identik.
-> Rujukan notebook pada riwayat di bawah memakai penomoran sebelum 2026-10-19. Pemilihan model memakai validation; hasil test hanya
-> mengestimasi kandidat yang terkunci. Kandidat AP validation tertinggi
-> adalah Random Forest Exp E (test AP 0,6383; F1 macro 0,7309). Lihat README dan
-> `outputs/results/REPORT.md` untuk hasil run terbaru.
-
+> **Status terkini per 2026-10-19.** Dataset sumber hasil ekstraksi berisi
+> 50.227 baris dengan 174 fitur; dataset utama untuk pemodelan adalah proyeksi
+> 164 fitur tanpa sepuluh fitur jumlah trik DDS. DDS tetap membentuk label.
+> Alur notebook: 01 ekstraksi + DDS/label/split; 02–03 eksplorasi; 04
+> menyiapkan dataset tanpa fitur trik DDS; 05 melatih baseline; 06 mengevaluasi
+> baseline; 07 eksperimen kandidat; 08 evaluasi final. Notebook 05–08 memakai
+> data/processed_no_dds/. Skor tersimpan di bawah berasal dari run lama 174
+> fitur dan harus diperbarui setelah rerun modeling.
+>
 ## Ringkasan Proyek
 Penelitian skripsi membandingkan tiga algoritma ensemble berbasis pohon
 (Random Forest, XGBoost, LightGBM) sebagai **classifier biner** yang

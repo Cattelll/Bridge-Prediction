@@ -10,8 +10,7 @@ par Double-Dummy Solver (DDS).
 par DDS pada level, strain, status double/redouble, dan sisi declarer (NS/EW).
 Label 0 berarti tidak cocok. DDS v4 menyimpan semua alternatif kontrak par.
 
-Dataset terbaru berisi **50.227 baris**, 606 file LIN dan 1.390 file PBN, serta
-174 fitur model (164 fitur kanonik + 10 fitur trik DD). Positif 24,56%; rasio
+Dataset terbaru berisi **50.227 baris**, 606 file LIN dan 1.390 file PBN. Dataset ekstraksi memuat 174 fitur; proyeksi utama untuk pemodelan memakai 164 fitur kanonik tanpa 10 fitur jumlah trik DDS. Positif 24,56%; rasio
 negatif:positif sekitar 3,1:1. DDS tetap diperlukan untuk label, tetapi sembilan
 kolom par DDS yang langsung menentukan label tidak menjadi fitur.
 
@@ -22,19 +21,24 @@ record dengan fitur ringkas sama tetapi label berbeda tetap disimpan.
 
 ## Alur penelitian
 
-LIN (606 file) dan PBN (1.390 file) adalah format sumber yang digabung setelah preprocessing. Penelitian membandingkan dua **kondisi dataset fitur**: dengan 10 fitur jumlah trik DDS (174 fitur) dan tanpa 10 fitur tersebut (164 fitur). Kedua kondisi menggunakan board, label DDS, dan split deal-aware yang identik. Istilah "tanpa DDS" berarti tanpa fitur trik DDS; DDS tetap membentuk target pada kedua kondisi.
+LIN (606 file) dan PBN (1.390 file) adalah format sumber yang digabung
+setelah preprocessing. Alur utama memproyeksikan dataset menjadi 164 fitur
+kanonik tanpa fitur jumlah trik DDS. DDS tetap dipakai untuk membentuk target
+dan split deal-aware.
 
-Alurnya: **LIN/PBN -> Preprocessing -> Ekstraksi -> DDS -> dua kondisi dataset -> Split -> Random Forest, XGBoost, LightGBM -> Analisis hasil -> Evaluasi final**. Urutan notebook ada di [notebooks/README.md](notebooks/README.md), dan rincian tahap ada di [Tahapan Penelitian](docs/TAHAPAN_PENELITIAN.md).
+Alurnya: LIN/PBN -> Preprocessing -> Ekstraksi -> DDS untuk label -> dataset
+tanpa fitur trik DDS -> Split -> Random Forest, XGBoost, LightGBM -> Analisis
+hasil -> Evaluasi final.
 
 Model dipilih pada validation menggunakan AP sebagai metrik utama. Setelah kandidat dan threshold dikunci, test digunakan untuk evaluasi final.
 
-## Hasil run terbaru
+## Hasil run tersimpan
 
-Model dipilih berdasarkan validation set. Tabel test adalah estimasi akhir untuk
+Angka di bawah berasal dari run sebelumnya dengan 174 fitur DDS. Pipeline utama kini memakai 164 fitur tanpa trik DDS; rerun Notebook 5–8 diperlukan sebelum angka baru dapat dilaporkan. Model dipilih berdasarkan validation set. Tabel test adalah estimasi akhir untuk
 kandidat yang sudah dikunci; peringkat antar kandidat pada test hanya deskriptif.
 Metrik AP adalah Average Precision (AP; disebut PR-AUC/AP di tabel).
 
-**Baseline dari `configs/config.yaml`:**
+**Baseline historis 174 fitur dari `configs/config.yaml`:**
 
 | Model | Accuracy | F1 macro | ROC-AUC | AP (PR-AUC) |
 |---|---:|---:|---:|---:|
@@ -47,13 +51,9 @@ Dari kandidat yang diuji, **Random Forest Exp E** terpilih berdasarkan AP valida
 validation tertinggi; pada test accuracy-nya 0,8181. Ringkasan semua kandidat ada di
 [`outputs/results/REPORT.md`](outputs/results/REPORT.md).
 
-### Ablasi fitur trik DDS
-
-Eksperimen [`2026-10-16/no_dds_feature_ablation`](experiments/2026-10-16/no_dds_feature_ablation/README.md) memakai baris dan split identik untuk
-164 vs 174 fitur. Di test, F1 macro meningkat +10,96 pp (RF), +15,02 pp (XGBoost),
-dan +9,27 pp (LightGBM) saat 10 fitur trik DD disertakan. Target tetap dibuat
-dengan DDS pada kedua kondisi; ablasi ini mengukur fitur, bukan menghilangkan DDS
-dari definisi label.
+Dataset 174 fitur tetap menjadi sumber ekstraksi dan pembanding historis.
+Notebook 04 kini hanya menyiapkan proyeksi 164 fitur tanpa fitur trik DDS;
+training, evaluasi, dan analisis model berada di Notebook 05–08.
 
 ## Menjalankan pipeline
 
@@ -65,8 +65,7 @@ python scripts/build_dds_cache.py
 python scripts/run_pipeline.py
 ```
 
-`run_pipeline.py` membangun dataset LIN+PBN dengan split berbasis deal dan
-melatih tiga baseline. Urutan lengkapnya ada di [notebooks/README.md](notebooks/README.md): preprocessing dan ekstraksi, pemeriksaan data, ablation fitur DDS, pemodelan, analisis hasil, lalu evaluasi final.
+`run_pipeline.py` membangun baseline historis dengan split berbasis deal. Urutan lengkapnya ada di [notebooks/README.md](notebooks/README.md): preprocessing dan ekstraksi, pemeriksaan data, penyusunan dataset tanpa fitur trik DDS, pemodelan, analisis hasil, lalu evaluasi final.
 
 ## Struktur
 
