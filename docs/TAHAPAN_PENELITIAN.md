@@ -94,12 +94,12 @@ ablation terdapat di [EXPERIMENTS.md](EXPERIMENTS.md) dan
 
 ## Notebook yang merealisasikan tahapan
 
-- `01_data_extraction.ipynb`: parsing LIN/PBN, preprocessing, ekstraksi, DDS,
-  label, dan split resmi dengan fitur DDS.
-- `02_eda_features.ipynb`: pemeriksaan data dan fitur.
-- `03_modeling.ipynb`: baseline tiga algoritma pada dataset resmi.
-- `04_evaluation.ipynb`: evaluasi dan interpretasi baseline.
-- `05_improvement_experiments.ipynb`: analisis kandidat pada validation.
-- `06_final_evaluation.ipynb`: pemilihan terkunci dan evaluasi test.
-- `experiments/2026-10-16/no_dds_feature_ablation/`: perbandingan 174 vs 164
-  fitur dengan split dan label yang identik.
+- `01_data_extraction.ipynb`: preprocessing, ekstraksi, DDS, label, dan split.
+- `02_data_exploration.ipynb`: pemeriksaan tabel board dan dataset hasil ekstraksi.
+- `03_feature_analysis.ipynb`: pemeriksaan distribusi dan fitur.
+- `04_dds_feature_ablation.ipynb`: dua kondisi fitur dan pembandingan algoritma
+  untuk mengukur kontribusi sepuluh fitur trik DDS.
+- `05_modeling.ipynb`: baseline tiga algoritma pada dataset resmi 174 fitur.
+- `06_evaluation.ipynb`: analisis dan evaluasi baseline.
+- `07_improvement_experiments.ipynb`: analisis kandidat eksperimen pada validation.
+- `08_final_evaluation.ipynb`: pemilihan terkunci dan evaluasi test final.

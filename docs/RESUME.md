@@ -1,8 +1,8 @@
 # Resume Dokumentasi Proyek
 
-Status sinkronisasi: 2026-10-16. Angka terbaru bersumber dari notebook 01?06 yang
-dijalankan ulang setelah split global berdasarkan deal dan deduplikasi
-fitur-label diperbaiki.
+Status sinkronisasi: 2026-10-19. Notebook 04 menempatkan ablation fitur DDS setelah pemeriksaan data
+ke rangkaian notebook penelitian stabil. Ia membandingkan 174 vs 164 fitur
+pada label dan split yang sama.
 
 | Dokumen | Cakupan | Status |
 |---|---|---|
@@ -13,7 +13,7 @@ fitur-label diperbaiki.
 | [EXPERIMENTS](EXPERIMENTS.md) | Baseline, seleksi, ablasi dan batasan | Terkini |
 | [ALGORITHMS](ALGORITHMS.md) | Teori algoritma | Referensi konsep |
 | [REPORT](../outputs/results/REPORT.md) | Metrik run terbaru | Terkini |
-| `experiments/2026-07-*`, `2026-08-*` | Riwayat target lama/split sebelumnya | Arsip historis |
+| `experiments/2026-07-*`, `2026-08-*` | Riwayat eksperimen dan split terdahulu | Arsip historis |
 
 Target adalah `matches_par_contract`: kecocokan kontrak aktual dengan salah satu
 kontrak par DDS v4 berdasarkan level, strain, double/redouble, dan sisi declarer.

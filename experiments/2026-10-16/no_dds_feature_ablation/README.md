@@ -1,6 +1,6 @@
-# Ablasi fitur trik DDS ? 2026-10-16
+# Ablasi Fitur Trik DDS - 2026-10-16
 
-Notebook: [`01_no_dds_feature_ablation.ipynb`](01_no_dds_feature_ablation.ipynb)
+Notebook resmi: [`04_dds_feature_ablation.ipynb`](../../../notebooks/04_dds_feature_ablation.ipynb)
 
 ## Rancangan
 
@@ -44,6 +44,6 @@ exact. SHAP menunjukkan perilaku model, bukan sebab-akibat.
 - `outputs/shap_mean_absolute_importance.csv`, `outputs/shap_top_features.png`
 - `outputs/best_model_confusion_matrix.png`, `outputs/summary.json`
 
-Model representatif untuk confusion matrix dipilih berdasarkan AP validation. Bangun ulang dengan `scripts/build_dataset_no_dds.py`, lalu jalankan notebook ini.
+Model representatif untuk confusion matrix dipilih berdasarkan AP validation. Notebook resmi 07 akan membangun proyeksi tanpa DDS otomatis bila dataset belum tersedia; untuk membangunnya terpisah, jalankan `scripts/build_dataset_no_dds.py`.
 Skrip membangun ulang split resmi dari sumber LIN+PBN dan cache DDS v4 sebelum
 membuat proyeksi tanpa fitur DDS; model tidak dilatih oleh skrip tersebut.

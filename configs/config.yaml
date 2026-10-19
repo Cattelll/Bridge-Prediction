@@ -19,12 +19,12 @@ features:
   stoppers: true
   auction_features: true
 
-# Source of truth for the official pipeline (notebooks/03_modeling.ipynb reads
+# Source of truth for the official pipeline (notebooks/05_modeling.ipynb reads
 # this file directly). Target is the binary `matches_par_contract` label (does
 # the bid contract match any DDS par contract by level, strain, double status, and declarer side?). RF + LightGBM
 # use class_weight="balanced" to counter the matches_par_contract class
 # imbalance; XGBoost has no native class_weight so it runs unweighted here
-# (see notebooks/05 Exp B/F for the sample_weight study).
+# (see notebooks/07 Exp B/F for the sample_weight study).
 models:
   random_forest:
     n_estimators: 300

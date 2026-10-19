@@ -2,7 +2,8 @@
 
 Pipeline resmi membangun klasifikasi biner kecocokan kontrak par dari rekaman
 LIN dan PBN. Definisi label dan skema fitur berada di `src/`; notebook
-`01` sampai `06` mengorkestrasi ekstraksi, eksplorasi, pelatihan, dan evaluasi.
+`01` sampai `08` mengorkestrasi preprocessing,
+analisis, pemodelan, dan evaluasi.
 
 ## Alur penelitian sesuai diagram
 
@@ -95,6 +96,4 @@ python scripts/build_dds_cache.py  # hanya jika cache v4 belum tersedia
 python scripts/run_pipeline.py    # membangun split deal-aware dan melatih baseline
 ```
 
-Notebook 01 sampai 06 menyediakan EDA dan eksperimen tambahan. `scripts/run_pipeline.py`
-menggunakan target biner dan cache v4; jangan memakai pipeline multiclass lama
-dari eksperimen arsip.
+Notebook 01 sampai 08 menjalankan alur penelitian aktif: preprocessing dan ekstraksi, eksplorasi, analisis fitur, ablasi, pemodelan, analisis hasil, eksperimen kandidat, dan evaluasi final. `scripts/run_pipeline.py` menggunakan target biner dan cache v4.

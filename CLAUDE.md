@@ -1,13 +1,15 @@
 # CLAUDE.md — Klasifikasi Kecocokan Kontrak Par pada Contract Bridge
 
 
-> **Status terkini ? 2026-10-16 (menggantikan angka lama di riwayat bawah).**
+> **Status terkini per 2026-10-19 (menggantikan angka lama di riwayat bawah).**
 > Split kini dikelompokkan berdasarkan tanda tangan deal 52 kartu kanonik,
 > termasuk duplikat lintas file/sumber. Deduplikasi hanya membuang rekaman dengan
 > fitur dan label sama; dataset hasilnya 50.227 baris, 174 fitur, 24,56% positif,
 > split 35.161 / 7.534 / 7.532. Semua skor sebelum perbaikan split ini adalah
-> historis dan **bukan estimasi final**. Notebook resmi 01?06 telah dijalankan
-> ulang dengan DDS v4. Pemilihan model memakai validation; hasil test hanya
+> historis dan **bukan estimasi final**. Notebook stabil dijalankan dengan urutan
+> 01, 02, 03, 04, 05, 06, 07, 08 (lihat `notebooks/README.md`); Notebook 04
+> membandingkan dataset 174 fitur DDS dan 164 fitur tanpa trik DDS pada label/split identik.
+> Rujukan notebook pada riwayat di bawah memakai penomoran sebelum 2026-10-19. Pemilihan model memakai validation; hasil test hanya
 > mengestimasi kandidat yang terkunci. Kandidat AP validation tertinggi
 > adalah Random Forest Exp E (test AP 0,6383; F1 macro 0,7309). Lihat README dan
 > `outputs/results/REPORT.md` untuk hasil run terbaru.
@@ -267,9 +269,9 @@ sebelum maupun sesudah fix.
 > cache v4, label biner, dan split deal-aware.
 
 **Notebook 5 — eksperimen peningkatan baseline (2026-07-17/18)**:
-ditambahkan `notebooks/05_improvement_experiments.ipynb`, didorong oleh
+ditambahkan `notebooks/07_improvement_experiments.ipynb`, didorong oleh
 temuan `experiments/2026-07-15/08_baseline_dds_default.ipynb` bahwa
-hyperparameter XGBoost "acc-tuned" yang dipakai di `03_modeling.ipynb`
+hyperparameter XGBoost "acc-tuned" yang dipakai di `05_modeling.ipynb`
 di-tuning di dataset 10.223 board (usang untuk 49.755 board).
 
 **Kendala teknis (3x gagal sebelum berhasil)**: percobaan pertama pakai
@@ -292,8 +294,8 @@ paralel sendiri.
 
 | Model | Accuracy | F1 Macro | F1 Weighted |
 |---|---|---|---|
-| XGBoost (baseline resmi, acc-tuned lama) | 56.1% | 0.342 | 0.532 |
-| **LightGBM (baseline resmi, class_weight)** | 56.4% | **0.410** | **0.557** |
+| XGBoost (baseline, acc-tuned lama) | 56.1% | 0.342 | 0.532 |
+| **LightGBM (baseline, class_weight)** | 56.4% | **0.410** | **0.557** |
 | **XGBoost (Exp A: hyperparameter default config.yaml)** | **57.5%** | 0.390 | 0.554 |
 | XGBoost (Exp B: Exp A + sample_weight balanced) | 52.4% | 0.407 | 0.539 |
 | Ensemble (XGBoost Exp A + LightGBM retuned) | 56.9% | 0.400 | 0.555 |
@@ -317,15 +319,15 @@ manapun dibanding kandidat terbaiknya masing-masing.
 
 **Kesimpulan & rekomendasi promosi**: **tidak ada kandidat yang
 mengalahkan LightGBM class_weight di F1 macro** (prioritas utama proyek
-mengingat class imbalance ekstrem) — baseline resmi di `notebooks/03-04`
+mengingat class imbalance ekstrem) — baseline di `notebooks/03-04`
 **tetap tidak diubah**, sesuai keputusan otomatis notebook (kriteria F1
 macro, lihat cell "Simpan Model Kandidat"). Namun **XGBoost "default"
 config.yaml layak dipromosikan** menggantikan hyperparameter "acc-tuned"
-lama di `notebooks/03_modeling.ipynb` — perbaikan nyata & tervalidasi
+lama di `notebooks/05_modeling.ipynb` — perbaikan nyata & tervalidasi
 test set (+1.4pp accuracy, +4.8pp F1 macro) tanpa trade-off, konsisten
 dengan temuan nb08. Promosi ini **SUDAH dilakukan pada 2026-08-27** — lihat
 "Audit menyeluruh notebooks/01–06" di bawah. Detail eksperimen ada di
-`notebooks/05_improvement_experiments.ipynb` + `outputs/results/nb05_summary.json`/
+`notebooks/07_improvement_experiments.ipynb` + `outputs/results/nb05_summary.json`/
 `nb05_test_comparison.csv`.
 
 **Perluasan notebook 5 (Eksperimen E-H) + notebook 6 evaluasi final
@@ -336,10 +338,9 @@ lingkup penelitian (RF vs XGBoost vs LightGBM sebagai model tunggal).
 mengevaluasi **8 kandidat** (3 baseline + 5 retuning). Paragraf di bawah
 dipertahankan sebagai riwayat.
 
-Isi lama (2026-07-21): `notebooks/05_improvement_experiments.ipynb`
-ditambah 4 metode baru untuk perbandingan, dan `notebooks/06_final_evaluation.ipynb`
-dibuat sebagai laporan akhir tunggal yang memuat SEMUA model (3 baseline
-resmi + 8 kandidat notebook 5) sekaligus.
+Isi lama (2026-07-21): `notebooks/07_improvement_experiments.ipynb`
+ditambah 4 metode baru untuk perbandingan, dan `notebooks/08_final_evaluation.ipynb`
+dibuat sebagai laporan akhir tunggal yang memuat SEMUA model (3 baseline + 8 kandidat notebook 5) sekaligus.
 
 Metode baru di notebook 5:
 - **Eksperimen E** — retuning RandomForest (belum pernah dicoba di 182
@@ -364,20 +365,20 @@ Metode baru di notebook 5:
   stacking condong ke kelas mayoritas.
 - *(Eksperimen D — ensemble soft-voting 50/50 — juga dihapus 2026-08-31.)*
 
-**Hasil akhir komprehensif (test set, `notebooks/06_final_evaluation.ipynb`)** —
+**Hasil akhir komprehensif (test set, `notebooks/08_final_evaluation.ipynb`)** —
 diurutkan F1 macro. *Angka setelah promosi XGBoost (2026-08-27) + penghapusan
 ensemble/stacking (2026-08-31): 8 kandidat.*
 
 | Model | Accuracy | F1 Macro | F1 Weighted |
 |---|---|---|---|
-| **LightGBM (baseline resmi)** | 56.4% | **0.410** | 0.557 |
+| **LightGBM (baseline)** | 56.4% | **0.410** | 0.557 |
 | XGBoost (Exp B: balanced penuh) | 52.4% | 0.407 | 0.539 |
 | XGBoost (Exp F: soft-balanced α=0.25) | **57.5%** | 0.406 | **0.560** |
 | LightGBM (Exp C: retuned) | 55.6% | 0.394 | 0.544 |
 | RandomForest (Exp E: retuned) | 48.9% | 0.390 | 0.507 |
 | XGBoost (Exp A: retuned) | 57.5% | 0.390 | 0.554 |
-| XGBoost (baseline resmi) | 57.5% | 0.390 | 0.554 |
-| RandomForest (baseline resmi) | 46.8% | 0.325 | 0.485 |
+| XGBoost (baseline) | 57.5% | 0.390 | 0.554 |
+| RandomForest (baseline) | 46.8% | 0.325 | 0.485 |
 
 *(Kandidat historis yang dihapus, untuk rujukan: Stacking H 58.2%/0.384/0.559 ·
 Ensemble D 50/50 56.9%/0.400/0.555 · Ensemble G 57.3%/0.397/0.556.)*
@@ -388,7 +389,7 @@ Ensemble D 50/50 56.9%/0.400/0.555 · Ensemble G 57.3%/0.397/0.556.)*
 > Exp A karena keduanya memakai default config.yaml. Sisa tabel tidak berubah
 > (deterministik, model & data sama).
 
-**Kesimpulan akhir**: **LightGBM (baseline resmi, tidak berubah) tetap
+**Kesimpulan akhir**: **LightGBM (baseline, tidak berubah) tetap
 model utama proyek** — F1 macro tertinggi (prioritas utama karena class
 imbalance ekstrem), sesuai semua analisis. **XGBoost Exp F (soft-balanced
 α=0.25)** adalah alternatif "all-around terbaik": F1 macro nyaris identik
@@ -401,7 +402,7 @@ default config.yaml (promosi dari "acc-tuned"); `lightgbm.pkl` &
 bukan promosi. **Update 2026-08-31**: Eksperimen D/G/H (ensemble + stacking)
 dihapus dari notebook — di luar ruang lingkup. Detail lengkap, grafik
 (confusion matrix, feature importance, SHAP, radar chart), dan tabel mentah
-ada di `notebooks/06_final_evaluation.ipynb` dan
+ada di `notebooks/08_final_evaluation.ipynb` dan
 `outputs/results/nb06_final_comparison.csv`/`nb06_summary.json`.
 
 > **Catatan keandalan lanjutan**: eksekusi notebook 5/6 kali ini sempat
@@ -419,14 +420,14 @@ ada di `notebooks/06_final_evaluation.ipynb` dan
 
 **Pembersihan model kandidat notebook 5 (2026-07-21, lanjutan)** —
 ⚠️ **DIBATALKAN 2026-08-27** (lihat "Audit menyeluruh notebooks/01–06" di
-bawah): pemangkasan ini membuat `notebooks/06_final_evaluation.ipynb` tidak
+bawah): pemangkasan ini membuat `notebooks/08_final_evaluation.ipynb` tidak
 bisa dijalankan ulang. Sekarang nb05 Bagian 11 menyimpan **semua** kandidat
 lagi, pakai `joblib compress=3` sehingga `randomforest_expE_retuned.pkl`
 turun dari 1,29GB → ~123MB; nb06 **tidak lagi frozen**. Paragraf di bawah
 dipertahankan sebagai riwayat.
 
 Isi keputusan lama (2026-07-21): setelah
-`notebooks/06_final_evaluation.ipynb` selesai dan hasilnya terekam
+`notebooks/08_final_evaluation.ipynb` selesai dan hasilnya terekam
 permanen di atas, 8 model kandidat yang tadinya disimpan tanpa syarat
 dipangkas jadi **2 saja** untuk reklaim disk (~1,4GB, didominasi
 `randomforest_expE_retuned.pkl` yang sendirian 1,29GB):
@@ -434,18 +435,18 @@ dipangkas jadi **2 saja** untuk reklaim disk (~1,4GB, didominasi
   terbaik) dan `stacking_expH_meta_logreg.pkl` (accuracy tertinggi
   proyek, 58,2%).
 - **Dihapus** (superseded/tidak kompetitif): `randomforest_expE_retuned.pkl`,
-  `lightgbm_expC_retuned.pkl` (kalah dari LightGBM baseline resmi di semua
+  `lightgbm_expC_retuned.pkl` (kalah dari LightGBM baseline di semua
   metrik), `xgboost_expA_default.pkl` & `xgboost_expB_balanced.pkl`
   (keduanya didominasi Exp F), `ensemble_manifest.json`.
 
 **Konsekuensi**: `stacking_expH_meta_logreg.pkl` sekarang **beku**
 (frozen) — 3 model dasarnya sudah dihapus, jadi tidak bisa dipakai ulang
 langsung tanpa regenerasi (lihat `outputs/models/stacking_manifest.json`
-field `"status"`). `notebooks/06_final_evaluation.ipynb` juga jadi
+field `"status"`). `notebooks/08_final_evaluation.ipynb` juga jadi
 **frozen** senada dengan `notebooks_dds/` — sudah menghasilkan laporan
 final sekali, tapi TIDAK bisa dijalankan ulang apa adanya (sel pemuatan
 model akan gagal `FileNotFoundError` untuk 4 file yang sudah dihapus).
-`notebooks/05_improvement_experiments.ipynb` Bagian 12 sudah diupdate
+`notebooks/07_improvement_experiments.ipynb` Bagian 12 sudah diupdate
 mengikuti perilaku baru ini (hanya menyimpan 2 model), sehingga eksekusi
 ulang notebook 5 di masa depan konsisten dengan keadaan disk saat ini.
 
@@ -455,7 +456,7 @@ ulang notebook 5 di masa depan konsisten dengan keadaan disk saat ini.
 lolos "Restart & Run All" dengan execution count berurutan tanpa error.
 
 1. **XGBoost "acc-tuned" DIPROMOSIKAN ke default `config.yaml`**
-   (keputusan yang sebelumnya "menunggu konfirmasi"). `notebooks/03_modeling.ipynb`
+   (keputusan yang sebelumnya "menunggu konfirmasi"). `notebooks/05_modeling.ipynb`
    kini memuat SEMUA hyperparameter dari `configs/config.yaml` via
    `yaml.safe_load` — tidak ada angka di-hardcode di notebook (sesuai
    "Konvensi Kode"). `configs/config.yaml` diupdate: `class_weight: balanced`
@@ -465,7 +466,7 @@ lolos "Restart & Run All" dengan execution count berurutan tanpa error.
    F1 weighted, top-3, top-5 — tanpa trade-off). RF & LightGBM **tidak
    berubah**. LightGBM tetap model utama (F1 macro 0.410 tertinggi).
 
-2. **`notebooks/05_improvement_experiments.ipynb` diperbaiki**: notebook
+2. **`notebooks/07_improvement_experiments.ipynb` diperbaiki**: notebook
    sebelumnya **crash** pada "Restart & Run All" — `NameError: best_xgb_proba`
    (Eksperimen G) dan `NameError: best_xgb_key` (Bagian 10), dua nama yang
    tak pernah didefinisikan; execution count tidak berurutan; output
@@ -478,14 +479,14 @@ lolos "Restart & Run All" dengan execution count berurutan tanpa error.
    SEMUA 6 model kandidat + `ensemble_manifest.json` + `stacking_manifest.json`
    (joblib `compress=3`).
 
-3. **`notebooks/06_final_evaluation.ipynb` TIDAK LAGI frozen**: pemangkasan
+3. **`notebooks/08_final_evaluation.ipynb` TIDAK LAGI frozen**: pemangkasan
    model 2026-07-21 membuatnya gagal `FileNotFoundError` di sel ke-3. Karena
    nb05 kini menyimpan semua kandidat lagi (RF Exp E turun 1,29GB → ~123MB
    berkat joblib compress), nb06 kembali bisa dijalankan ulang normal. Load
    model diganti ke `joblib.load` (baca pickle biasa maupun joblib compress).
    `stacking_expH_meta_logreg.pkl` tidak lagi "beku".
 
-4. **`notebooks/04_evaluation.ipynb`**: blok "PERBANDINGAN 164 vs 182 fitur"
+4. **`notebooks/06_evaluation.ipynb`**: blok "PERBANDINGAN 164 vs 182 fitur"
    dihapus — blok itu membaca `test_comparison.csv` yang **baru saja ditulis
    notebook itu sendiri**, jadi selalu membandingkan hasil dengan dirinya
    sendiri (output harfiah "+0.00pp" untuk semua). Ablasi DDS yang
@@ -577,12 +578,12 @@ dengan `target_base`.
 (`dd_par_level`, `dd_par_denom_S/H/D/C/N`, `dd_par_score`,
 `dd_par_declarer_is_ns`) dikeluarkan permanen dari `feature_columns.json`
 (`_LEAKAGE_COLS` di `dataset_builder.py`) — tetap tersimpan di CSV untuk
-analisis/audit (lihat korelasi di `notebooks/02_eda_features.ipynb` bagian
+analisis/audit (lihat korelasi di `notebooks/03_feature_analysis.ipynb` bagian
 7, yang menunjukkan `dd_par_level`/`dd_par_declarer_is_ns` berkorelasi jauh
 lebih kuat dengan `matches_par_contract` dibanding fitur lain manapun — persis seperti
 diharapkan, karena keduanya membentuk label). 10 kolom trik DD per strain
 (`ns_dd_*`/`ew_dd_*`) TIDAK otomatis dikeluarkan — keputusan pakai/buang
-divalidasi empiris lewat ablasi baru di `notebooks/03_modeling.ipynb`
+divalidasi empiris lewat ablasi baru di `notebooks/05_modeling.ipynb`
 bagian 1b (RandomForest cepat, 174 fitur vs 164 fitur kanonik saja,
 dibandingkan di validation set, ambang keputusan +0.5pp F1 macro). **Hasil
 ablasi**: 174 fitur (F1 macro val 0.7348) mengalahkan 164 fitur (0.6927)
@@ -631,9 +632,9 @@ tanpa error)**:
 
 | Model | Accuracy | F1 Macro | F1 Weighted | ROC-AUC | PR-AUC |
 |---|---|---|---|---|---|
-| Baseline resmi RandomForest | 80.8% | 0.736 | 0.805 | 0.800 | 0.634 |
-| Baseline resmi XGBoost | 81.0% | 0.691 | 0.786 | 0.800 | 0.634 |
-| Baseline resmi LightGBM | 79.9% | 0.741 | 0.802 | 0.814 | 0.658 |
+| Baseline RandomForest | 80.8% | 0.736 | 0.805 | 0.800 | 0.634 |
+| Baseline XGBoost | 81.0% | 0.691 | 0.786 | 0.800 | 0.634 |
+| Baseline LightGBM | 79.9% | 0.741 | 0.802 | 0.814 | 0.658 |
 | Exp A — XGBoost retuned (= default config.yaml) | 82.5% | 0.731 | 0.810 | 0.820 | 0.670 |
 | Exp B — XGBoost + sample_weight balanced penuh | 81.0% | 0.749 | 0.810 | 0.818 | 0.667 |
 | Exp C — LightGBM retuned | 81.0% | 0.749 | 0.810 | 0.820 | 0.670 |
@@ -651,16 +652,16 @@ sama-sama kompetitif) adalah XGBoost Eksperimen F (soft-balanced,
 accuracy tertinggi kedua (82.3%, cuma 0.2pp di bawah Exp A). Ini beda dari
 era 36-kelas (di mana LightGBM class_weight vs XGBoost accuracy-tinggi
 adalah trade-off yang jelas) — untuk `matches_par_contract`, satu kandidat XGBoost
-unggul di kedua sumbu sekaligus. **Baseline resmi TIDAK diubah**
+unggul di kedua sumbu sekaligus. **Baseline TIDAK diubah**
 (`outputs/models/{randomforest,xgboost,lightgbm}.pkl` masih hyperparameter
 `configs/config.yaml` apa adanya) — keputusan promosi kandidat Eksperimen F
-ke baseline resmi belum diambil, konsisten dengan konvensi proyek
-("`notebooks/05` tidak menimpa baseline resmi", lihat `notebooks/06`).
+ke baseline belum diambil, konsisten dengan konvensi proyek
+("`notebooks/05` tidak menimpa baseline", lihat `notebooks/06`).
 Detail lengkap, grafik, dan tabel mentah ada di
-`notebooks/03_modeling.ipynb` (ablasi fitur), `notebooks/04_evaluation.ipynb`,
-`notebooks/05_improvement_experiments.ipynb`
+`notebooks/05_modeling.ipynb` (ablasi fitur), `notebooks/06_evaluation.ipynb`,
+`notebooks/07_improvement_experiments.ipynb`
 (`outputs/results/nb05_summary.json`/`nb05_test_comparison.csv`), dan
-`notebooks/06_final_evaluation.ipynb`
+`notebooks/08_final_evaluation.ipynb`
 (`outputs/results/nb06_final_comparison.csv`/`nb06_summary.json`).
 
 `notebooks_dds/` dan `experiments/` **tidak disentuh** — tetap arsip
@@ -798,12 +799,13 @@ notebooks/                    Pipeline RESMI (konsolidasi 2026-07-17; target bin
                                matches_par_contract sejak 2026-09-18; re-run penuh 2026-09-18)
   01_data_extraction.ipynb    Parsing LIN+PBN + DDS → dataset CSV (data/processed/),
                                target_col='matches_par_contract'
-  02_eda_features.ipynb       EDA matches_par_contract & dokumentasi 174 fitur model
-  03_modeling.ipynb           Ablasi fitur trik DD (1b) + training RF/XGBoost/LightGBM
-                               (hyperparameter dari configs/config.yaml)
-  04_evaluation.ipynb         Evaluasi final (matches_par_contract), SHAP, radar
-  05_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning hyperparameter + class weighting model tunggal)
-  06_final_evaluation.ipynb   Laporan komprehensif 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
+  02_data_exploration.ipynb Pemeriksaan tabel board dan dataset
+  03_feature_analysis.ipynb   Analisis distribusi fitur, target, dan sumber data
+  04_dds_feature_ablation.ipynb Perbandingan 164 vs 174 fitur
+  05_modeling.ipynb           Baseline RF/XGBoost/LightGBM dengan hyperparameter configs/config.yaml
+  06_evaluation.ipynb         Evaluasi baseline (test), confusion matrix, SHAP, radar
+  07_improvement_experiments.ipynb  Eksperimen A/B/C/E/F (retuning hyperparameter + class weighting model tunggal)
+  08_final_evaluation.ipynb   Laporan komprehensif 8 kandidat (3 baseline + 5 retuning A/B/C/E/F)
 
 notebooks_dds/                 ARSIP historis — skema 36-kelas lama (sebelum konsolidasi
                                2026-07-17 dan sebelum perubahan target biner 2026-09-18).
@@ -899,13 +901,13 @@ Metadata (prefix `_`) tidak digunakan sebagai fitur ML:
 
 ## Hasil Final
 
-*(test set, `notebooks/04_evaluation.ipynb`, target biner `matches_par_contract` sejak
+*(test set, `notebooks/06_evaluation.ipynb`, target biner `matches_par_contract` sejak
 2026-09-18 — 606 file `.lin` + 1.390 file `.pbn` / **49.755 papan** /
 **174 fitur** (164 kanonik + 10 trik DD) / 2 kelas, split **group-aware**.
 definisi label diperketat 2026-09-27. Superseded angka sebelumnya — lihat
 "Status Proyek" di atas)*
 
-**Baseline resmi** (hyperparameter `configs/config.yaml` apa adanya):
+**Baseline** (hyperparameter `configs/config.yaml` apa adanya):
 
 | Model | Accuracy | F1 Macro | F1 Weighted | ROC-AUC | PR-AUC |
 |-------|----------|----------|-------------|---------|--------|
@@ -919,7 +921,7 @@ mereka membedakan kedua kelas secara nyata, bukan sekadar mengikuti kelas
 mayoritas.
 
 **Kandidat terbaik notebook 05/06 (retuning, belum dipromosikan ke
-baseline resmi)**: **XGBoost Eksperimen F (soft-balanced, `sample_weight`
+baseline)**: **XGBoost Eksperimen F (soft-balanced, `sample_weight`
 parsial α=0.5)** — Accuracy 84.7%, F1 Macro **0.782**, F1 Weighted 0.843,
 ROC-AUC 0.849 — unggul di F1 macro DAN nyaris tertinggi di accuracy (0.2pp
 di bawah Exp A) sekaligus, beda dari era 36-kelas yang trade-off-nya lebih
@@ -938,7 +940,7 @@ anti-leakage, dan hasil ablasi fitur trik-DD ada di "Status Proyek" di atas.
 - Daftar kolom fitur tersimpan di `data/processed/feature_columns.json`;
   gunakan `load_splits()` agar konsisten
 - Hyperparameter ada di `configs/config.yaml` — tidak boleh hardcode di
-  notebook. `notebooks/03_modeling.ipynb` memuatnya via `yaml.safe_load`
+  notebook. `notebooks/05_modeling.ipynb` memuatnya via `yaml.safe_load`
   (`CONFIG`); `configs/config.yaml` menyertakan `class_weight: balanced`
   untuk `random_forest` + `lightgbm`. `notebooks/05` memakai grid manual
   eksplisit (eksperimen tuning — dikecualikan dari aturan ini).

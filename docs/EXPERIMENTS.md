@@ -21,7 +21,7 @@ adalah metrik pelengkap. Threshold keputusan ditentukan di validation. Test
 hanya mengestimasi kandidat yang telah dikunci; peringkat semua kandidat pada
 test bersifat deskriptif.
 
-### Baseline resmi pada test
+### Baseline pada test
 
 | Model | Accuracy | F1 macro | F1 positif | ROC-AUC | AP |
 |---|---:|---:|---:|---:|---:|
@@ -48,7 +48,7 @@ tidak dianggap sebagai estimasi final.
 
 ## Ablasi 10 fitur trik DDS
 
-Notebook [`2026-10-16/no_dds_feature_ablation`](../experiments/2026-10-16/no_dds_feature_ablation/README.md) mempertahankan label DDS untuk kedua kondisi, tetapi membandingkan 164 fitur
+Notebook [`04_dds_feature_ablation.ipynb`](../notebooks/04_dds_feature_ablation.ipynb) dan catatan [`2026-10-16/no_dds_feature_ablation`](../experiments/2026-10-16/no_dds_feature_ablation/README.md) mempertahankan label DDS untuk kedua kondisi, tetapi membandingkan 164 fitur
 kanonik dengan 174 fitur yang menambah trik DD. Pada test, AP naik **15,32 pp**
 (RF), **15,60 pp** (XGBoost), dan **21,05 pp** (LightGBM). F1 macro naik 10,96,
 15,02, dan 9,27 pp berturut-turut.
@@ -58,6 +58,4 @@ Saabas pada sampel terbatas; XGBoost dan LightGBM memakai TreeSHAP exact.
 
 ## Arsip eksperimen lama
 
-Notebook `experiments/2026-07-*` dan `experiments/2026-08-*` berasal dari target
-36 kelas atau split sebelum pengelompokan global deal. Gunakan sebagai riwayat,
-bukan angka pembanding final pipeline biner sekarang.
+Notebook dalam `experiments/2026-07-*` dan `experiments/2026-08-*` mencatat eksperimen serta split terdahulu. Gunakan sebagai arsip metodologis; angka final mengacu pada pipeline aktif dan split deal-aware global.

@@ -99,15 +99,9 @@ tapi **dibuang** sebelum training (lihat `_META_COLS` di `dataset_builder.py`):
 
 ## Target (bukan fitur, kolom label)
 
-Lihat `get_contract_label()`, `get_contract_base()`, `get_contract_category()`
-di `src/features/engineer.py`.
-
-| Kolom | Kelas | Contoh |
+| Kolom | Nilai | Makna |
 |---|---|---|
-| `matches_par_contract` | 2 ? **primary** | `0` tidak cocok; `1` cocok dengan salah satu kontrak par DDS |
-| `target_base` | 36 ? historis | `"PASS"`, `"3N"`, `"4S"` |
-| `target` | ≤66 | `"4Sx"`, `"6Nxx"` |
-| `target_category` | 5 | `Pass`, `Partscore`, `Game`, `SmallSlam`, `GrandSlam` |
+| `matches_par_contract` | 0 atau 1 | `1` bila kontrak aktual cocok dengan salah satu kontrak par DDS menurut level, strain, status double/redouble, dan sisi declarer. |
 
 ## Invariant
 

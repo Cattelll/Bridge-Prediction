@@ -1,7 +1,7 @@
 """
 Generate a summary report from saved evaluation results.
 
-Reads:  outputs/results/nb04_summary.json        (notebook 04 — 3 baseline resmi)
+Reads:  outputs/results/nb04_summary.json        (notebook 04 — 3 baseline)
         outputs/results/nb06_final_comparison.csv (notebook 06 — 8 kandidat)
 
 Target biner `matches_par_contract` (sejak 2026-09-18): metrik yang
@@ -154,7 +154,7 @@ def build_report() -> str:
     if not results:
         lines += ["## Hasil Test Set\n\n*Belum ada — jalankan notebook 04.*\n"]
     else:
-        lines += ["## Hasil Test Set — Baseline Resmi", ""]
+        lines += ["## Hasil Test Set — Baseline", ""]
         lines += _metric_table(results)
         lines += ["### Nilai tertinggi per metrik (deskriptif)", ""]
         lines += _winners(results)
@@ -180,7 +180,7 @@ def build_report() -> str:
             "",
             "*Skor test bersifat deskriptif; pemilihan kandidat dilakukan dari validation. "
             "Kandidat retuning (Exp A/B/C/E/F) belum "
-            "dipromosikan ke baseline resmi.*",
+            "dipromosikan ke baseline.*",
             "",
         ]
         lines += _metric_table(candidates)
