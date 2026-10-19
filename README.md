@@ -20,6 +20,14 @@ tangan kanonik seluruh 52 kartu. Salinan deal dari file/sumber berbeda selalu
 berada di partisi yang sama. Record dengan fitur dan label identik dideduplikasi;
 record dengan fitur ringkas sama tetapi label berbeda tetap disimpan.
 
+## Alur penelitian
+
+LIN (606 file) dan PBN (1.390 file) adalah format sumber yang digabung setelah preprocessing. Penelitian membandingkan dua **kondisi dataset fitur**: dengan 10 fitur jumlah trik DDS (174 fitur) dan tanpa 10 fitur tersebut (164 fitur). Kedua kondisi menggunakan board, label DDS, dan split deal-aware yang identik. Istilah "tanpa DDS" berarti tanpa fitur trik DDS; DDS tetap membentuk target pada kedua kondisi.
+
+Alurnya: **LIN/PBN -> Preprocessing -> Ekstraksi -> DDS -> dua kondisi dataset -> Split -> Random Forest, XGBoost, LightGBM -> Analisis hasil -> Evaluasi final**. Rincian tahap ada di [Tahapan Penelitian](docs/TAHAPAN_PENELITIAN.md).
+
+Model dipilih pada validation menggunakan AP sebagai metrik utama. Setelah kandidat dan threshold dikunci, test digunakan untuk evaluasi final.
+
 ## Hasil run terbaru
 
 Model dipilih berdasarkan validation set. Tabel test adalah estimasi akhir untuk
@@ -58,7 +66,7 @@ python scripts/run_pipeline.py
 ```
 
 `run_pipeline.py` membangun dataset LIN+PBN dengan split berbasis deal dan
-melatih tiga baseline. Notebook resmi 01?06 mencakup EDA, tuning, serta analisis
+melatih tiga baseline. Notebook resmi 01 sampai 06 mencakup EDA, tuning, serta analisis
 SHAP. Jalankan dari repo root secara berurutan bila ingin mereproduksi analisis
 lengkap.
 
@@ -70,7 +78,7 @@ src/features/     fitur kanonik dan fitur/label DDS
 src/preprocessing/label, deduplikasi, split deal-aware
 src/models/       wrapper Random Forest, XGBoost, LightGBM
 src/evaluation/   metrik biner
-notebooks/        pipeline riset resmi 01?06
+notebooks/        pipeline riset resmi notebook 01 sampai 06
 scripts/          build cache, pipeline baseline, validasi parser/fitur
 data/             raw dan processed; tidak disimpan di Git
 outputs/          model dan hasil pipeline; tidak disimpan di Git

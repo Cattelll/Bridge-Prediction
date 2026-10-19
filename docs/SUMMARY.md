@@ -4,6 +4,12 @@ Penelitian membandingkan Random Forest, XGBoost, dan LightGBM untuk memprediksi
 apakah kontrak Bridge yang dibid manusia cocok dengan salah satu kontrak par
 Double-Dummy Solver.
 
+## Kondisi dataset fitur
+
+LIN dan PBN adalah format sumber yang digabung. Eksperimen membandingkan 174
+fitur dengan DDS dan 164 fitur tanpa sepuluh fitur jumlah trik DDS. DDS tetap
+membentuk label di kedua kondisi; board dan split-nya identik.
+
 ## Target dan dataset
 
 `matches_par_contract` bernilai 1 bila level, strain, status double/redouble, dan
@@ -27,7 +33,7 @@ Exp E tertinggi pada AP validation (0,6524); pada test AP 0,6383, F1 macro
 0,7309, accuracy 0,8109. XGBoost Exp A memiliki accuracy validation tertinggi
 (test accuracy 0,8181).
 
-Ablasi 10 fitur trik DD pada split sama menaikkan AP test 15,32?21,05 pp
+Ablasi 10 fitur trik DD pada split sama menaikkan AP test 15,32 hingga 21,05 poin persentase
 bergantung model. DDS tetap digunakan untuk membuat label pada semua kondisi.
 Rincian lengkap: [Eksperimen](EXPERIMENTS.md), [fitur](FEATURES.md),
 [arsitektur](ARCHITECTURE.md).
