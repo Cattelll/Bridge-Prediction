@@ -409,8 +409,8 @@ def load_splits(
     if missing:
         raise FileNotFoundError(
             f"Dataset di {processed_dir} belum lengkap (tidak ada: {', '.join(missing)}). "
-            "Jalankan notebooks/01_data_extraction.ipynb sampai selesai dulu — "
-            "jangan jalankan notebook lain selagi notebook 1 sedang membangun dataset."
+            "Jalankan notebooks/03_dds_dataset_split.ipynb sampai selesai dulu — "
+            "jangan jalankan notebook lain selagi Notebook 03 sedang membangun dataset."
         )
 
     metadata_types = {
@@ -428,7 +428,7 @@ def load_splits(
     if any("_deal_key" not in split.columns for split in (df_train, df_val, df_test)):
         raise ValueError(
             f"Dataset in {processed_dir} predates canonical deal grouping. "
-            "Rebuild it with the current notebooks/01 or scripts/run_pipeline.py."
+            "Rebuild it with notebooks/03_dds_dataset_split.ipynb or scripts/build_datasets.py."
         )
     group_sets = [set(split["_deal_key"]) for split in (df_train, df_val, df_test)]
     if ((group_sets[0] & group_sets[1]) or (group_sets[0] & group_sets[2])

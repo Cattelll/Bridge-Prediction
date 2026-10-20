@@ -1,11 +1,11 @@
 # Pipeline Notebook Penelitian
 
-Notebook 01 memeriksa preprocessing dan parsing sumber LIN/PBN. Notebook 02 mengeksplorasi contoh record mentah. **Notebook 03 menjalankan tahap DDS lalu split data**: DDS v4 membentuk label, builder membuat satu assignment split deal-aware, lalu menulis dua proyeksi dataset dari board dan split yang sama:
+Notebook 01 memeriksa preprocessing dan parsing sampel LIN/PBN. Notebook 02 mengeksplorasi contoh record mentah. **Notebook 03 menjalankan tahap DDS lalu split data**: DDS v4 membentuk label, builder membuat satu assignment split deal-aware, lalu menulis dua proyeksi dataset dari board dan split yang sama:
 
 - `data/processed/`: 174 fitur (164 fitur kanonik + 10 nilai trik DDS).
 - `data/processed_no_dds/`: 164 fitur kanonik untuk pemodelan utama.
 
-Dataset noDDS tidak memberikan nilai trik atau rincian par DDS sebagai input model, tetapi tetap mempertahankan label yang dibuat dengan DDS. Hanya noDDS yang diteruskan ke tiga model utama. Notebook 03 memeriksa kesetaraan split dan profil fitur noDDS; notebook 05 dan 06 menangani analisis hasil model.
+Dataset noDDS tidak memberikan nilai trik atau rincian par DDS sebagai input model, tetapi tetap mempertahankan label yang dibuat dengan DDS. Hanya noDDS yang diteruskan ke tiga model utama. Notebook 03 memeriksa kesetaraan split dan memprofilkan fitur noDDS; notebook 05 dan 06 menangani analisis hasil model.
 
 | Urutan | Notebook | Tahap penelitian |
 |---|---|---|
