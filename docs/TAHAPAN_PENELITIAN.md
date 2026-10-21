@@ -57,25 +57,24 @@ pada kedua proyeksi dataset; model utama memakai noDDS. Dataset tanpa fitur DDS 
 ## 5. Pemodelan dan analisis
 
 Notebook 04 melatih baseline Random Forest, XGBoost, dan LightGBM. Notebook 05
-mengevaluasi baseline. Notebook 06 menguji kandidat dan threshold dengan validation sebagai dasar pemilihan. AP menjadi metrik utama; F1 macro, F1
+mengevaluasi baseline. Notebook 06 menguji kandidat dan threshold khusus noDDS. Notebook 07 membandingkan improvement DDS/noDDS pada ketiga algoritma; kandidat dipilih memakai validation. AP menjadi metrik utama; F1 macro, F1
 positif, precision, recall, ROC-AUC, dan accuracy menjadi metrik pendamping.
 SHAP dan feature importance dipakai untuk interpretasi prediksi, bukan untuk
 menyatakan hubungan sebab-akibat.
 
 ## 6. Evaluasi final
 
-Notebook 07 memilih kandidat berdasarkan validation dan menggunakan test
-untuk estimasi akhir. Peringkat kandidat lain pada test hanya bersifat
-deskriptif. Hasil yang saat ini tersimpan berasal dari pipeline lama dengan
-174 fitur; Notebook 04–07 perlu dijalankan ulang untuk memperoleh hasil final
-pada dataset 164 fitur.
+Notebook 07 memilih kandidat berdasarkan validation. Notebook 08 memakai test
+untuk evaluasi final baseline dan kandidat terpilih; peringkat kandidat lain pada
+test hanya bersifat deskriptif. Notebook 07 dan 08 melaporkan hasil untuk kedua varian fitur dengan split yang sama.
 
 ## Notebook yang merealisasikan tahapan
 
 - 01_data_extraction.ipynb: preprocessing dan parsing LIN/PBN.
 - 02_data_exploration.ipynb: eksplorasi sampel record mentah.
 - 03_dds_dataset_split.ipynb: DDS untuk label, pembentukan dua dataset, split deal-aware, dan analisis fitur noDDS.
-- 04_modeling.ipynb: pelatihan tiga baseline pada dataset 164 fitur noDDS.
+- 04_modeling.ipynb: pelatihan enam baseline berpasangan pada dataset DDS dan noDDS.
 - 05_evaluation.ipynb: evaluasi baseline.
 - 06_improvement_experiments.ipynb: eksperimen kandidat pada validation.
-- 07_final_evaluation.ipynb: pemilihan kandidat dan evaluasi test.
+- 07_paired_improvement_experiments.ipynb: membandingkan improvement kandidat DDS/noDDS untuk ketiga algoritma.
+- 08_final_evaluation.ipynb: evaluasi final pada test.

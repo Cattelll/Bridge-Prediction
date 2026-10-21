@@ -13,7 +13,7 @@ DDS v4 tetap digunakan untuk membentuk label berdasarkan level, strain, status d
 
 ## Alur notebook
 
-Notebook 01–02 memeriksa parsing dan contoh record mentah. Notebook 03 membentuk label DDS, dua varian dataset, split bersama, dan analisis fitur noDDS. Notebook 04 melatih baseline, Notebook 05 mengevaluasinya, Notebook 06 menguji kandidat, dan Notebook 07 menyajikan evaluasi final.
+Notebook 01–02 memeriksa parsing dan contoh record mentah. Notebook 03 membentuk label DDS, dua varian dataset, split bersama, dan analisis fitur noDDS. Notebook 04 melatih baseline, Notebook 05 mengevaluasinya, Notebook 06 menguji kandidat noDDS, Notebook 07 membandingkan improvement DDS/noDDS, dan Notebook 08 menyajikan evaluasi final.
 
 ## Hasil
 

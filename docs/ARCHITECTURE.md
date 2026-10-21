@@ -27,7 +27,7 @@ flowchart TD
   J --> K([Selesai])
 ```
 
-Notebook 03 menghitung label DDS, melakukan deduplikasi dan split deal-aware sekali, lalu menyimpan dua proyeksi fitur dengan assignment split yang sama. Dataset `data/processed/` menyimpan 174 fitur (164 kanonik + 10 trik DDS); dataset `data/processed_no_dds/` menyimpan 164 fitur kanonik tanpa kolom trik maupun rincian par DDS. Notebook 04 melatih baseline pada noDDS; Notebook 05 menganalisis hasil baseline, Notebook 06 menjalankan eksperimen, dan Notebook 07 melakukan evaluasi final.
+Notebook 03 menghitung label DDS, melakukan deduplikasi dan split deal-aware sekali, lalu menyimpan dua proyeksi fitur dengan assignment split yang sama. Dataset `data/processed/` menyimpan 174 fitur (164 kanonik + 10 trik DDS); dataset `data/processed_no_dds/` menyimpan 164 fitur kanonik tanpa kolom trik maupun rincian par DDS. Notebook 04 melatih baseline pada DDS dan noDDS; Notebook 05 menganalisis hasil baseline, Notebook 06 menjalankan eksperimen noDDS, Notebook 07 membandingkan improvement DDS/noDDS, dan Notebook 08 melakukan evaluasi final.
 
 ## Label, fitur, dan split
 

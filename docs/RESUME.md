@@ -1,6 +1,6 @@
 # Resume Dokumentasi Proyek
 
-Status sinkronisasi: 2026-10-19. Pipeline utama memakai dataset 164 fitur kanonik tanpa fitur jumlah trik DDS. Notebook 03 membangun dataset 174 fitur dengan DDS dan dataset noDDS secara berpasangan dari board, label, deduplikasi, dan split yang sama. Modeling berjalan di Notebook 04, diikuti evaluasi baseline, eksperimen kandidat, dan evaluasi final pada Notebook 05–07.
+Status sinkronisasi: 2026-10-21. Pipeline membandingkan dataset DDS 174 fitur dan noDDS 164 fitur yang dibangun dari board, label, deduplikasi, dan split deal-aware yang sama. Notebook 04 melatih baseline, Notebook 05 mengevaluasi baseline, Notebook 06 menguji kandidat noDDS, Notebook 07 membandingkan improvement berpasangan, dan Notebook 08 mengevaluasi hasil final.
 
 | Dokumen | Cakupan | Status |
 |---|---|---|
@@ -14,4 +14,4 @@ Status sinkronisasi: 2026-10-19. Pipeline utama memakai dataset 164 fitur kanoni
 
 Label `matches_par_contract` menandai kecocokan kontrak aktual dengan salah satu kontrak par DDS v4 berdasarkan level, strain, status double/redouble, dan sisi declarer. DDS tetap diperlukan untuk membentuk label meski fitur jumlah trik DDS tidak digunakan dalam model utama.
 
-Dataset berisi 50.227 baris; split deal-aware memiliki 35.161 train, 7.534 validation, dan 7.532 test. Skor final untuk pipeline 164 fitur belum tersedia sampai Notebook 04–07 dijalankan ulang berurutan.
+Dataset berisi 50.227 baris; split deal-aware memiliki 35.161 train, 7.534 validation, dan 7.532 test. Notebook 07 menguji kandidat pada test setelah pemilihan berdasarkan validation; Notebook 08 merangkum evaluasi final.
