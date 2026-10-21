@@ -1,0 +1,7 @@
+dataset,algorithm,n_validation_rows,method,dds_feature_mean_abs_shap_share,top_10_features
+DDS,RandomForest,50,TreeExplainer default exact Tree SHAP; LightGBM native implementation,0.2846683374505986,"ew_dd_N, ns_dd_N, ew_hcp, ns_hcp_advantage, ns_hcp, ns_dd_S, ew_dd_S, ns_dd_H, ew_dd_H, ew_controls"
+DDS,XGBoost,50,TreeExplainer default exact Tree SHAP; LightGBM native implementation,0.3052126467227936,"ns_hcp, ns_dd_N, ew_dd_N, ns_dd_S, auction_has_double, ns_dd_H, ew_dd_S, ew_dd_H, auction_ew_bids, auction_ns_bids"
+DDS,LightGBM,50,TreeExplainer default exact Tree SHAP; LightGBM native implementation,0.3155270687182175,"ns_hcp, ns_dd_N, ns_dd_H, auction_has_double, ew_dd_N, ns_dd_S, auction_ew_bids, ew_dd_H, ew_dd_D, ew_dd_S"
+noDDS,RandomForest,50,TreeExplainer default exact Tree SHAP; LightGBM native implementation,0.0,"ew_hcp, ns_hcp_advantage, ns_hcp, ns_controls, ew_controls, auction_ew_bids, auction_ns_bids, auction_has_double, auction_doubled, ew_ltc"
+noDDS,XGBoost,50,TreeExplainer default exact Tree SHAP; LightGBM native implementation,0.0,"ns_hcp, auction_has_double, ns_controls, auction_ew_bids, auction_ns_bids, auction_competitive, ew_hcp, auction_len, ns_ltc, ew_ltc"
+noDDS,LightGBM,50,TreeExplainer default exact Tree SHAP; LightGBM native implementation,0.0,"ns_hcp, auction_has_double, ns_controls, auction_ew_bids, auction_ns_bids, ns_fit_D, ew_hcp, E_hcp_C, ew_ltc, ew_best_fit"

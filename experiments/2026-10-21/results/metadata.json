@@ -1,0 +1,12 @@
+{
+  "created": "2026-10-21",
+  "test_bootstrap_replicates": 500,
+  "shap_sample_size": 50,
+  "shap_method": "TreeExplainer default exact Tree SHAP path-dependent method across all six models; LightGBM uses its native Tree SHAP implementation",
+  "threshold_selection": "maximize macro-F1 over validation probabilities, threshold grid 0.05 to 0.95 in steps of 0.005",
+  "paired_test_design": "deal-cluster bootstrap DDS minus noDDS and exact sign test on deal-level accuracy differences; test set used only for final estimation",
+  "bootstrap_unit": "_deal_key groups sampled with replacement; within-deal rows remain together; class labels may differ within a deal",
+  "positive_class_rate_test": 0.2454859267126925,
+  "source_heldout_design": "internal source-held-out assessment on the already merged LIN+PBN dataset: train on LIN rows only; choose threshold on grouped 20% LIN validation using deal-aware StratifiedGroupKFold; refit on all LIN; evaluate on the PBN subset",
+  "source_heldout_scope": "source-separated internal validation within the merged LIN+PBN dataset; not independent external validation"
+}
